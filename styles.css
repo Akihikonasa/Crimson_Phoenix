@@ -696,3 +696,14 @@ main,
     transition-duration: 0.01ms !important;
   }
   }
+/* Hide the gallery before the page finishes loading */
+html:not(.afterglow-ready) body #particles,
+html:not(.afterglow-ready) body #site-header,
+html:not(.afterglow-ready) body #home,
+html:not(.afterglow-ready) body #memories,
+html:not(.afterglow-ready) body #footer,
+html:not(.afterglow-ready) body main,
+html:not(.afterglow-ready) body .closing-section,
+html:not(.afterglow-ready) body .site-footer {
+visibility: hidden !important;
+}
