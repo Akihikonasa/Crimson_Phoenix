@@ -1,0 +1,105 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#100d12">
+  <title>Afterglow — Private Memories</title>
+  <link rel="stylesheet" href="styles.css">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600&family=Playfair+Display:ital,wght@0,400;0,500;1,400&display=swap" rel="stylesheet">
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="config.js"></script>
+  <script src="app.js" defer></script>
+</head>
+<body>
+  <header class="topbar">
+    <a class="brand" href="#">afterglow<span>.</span></a>
+    <span id="status">Private memories</span>
+    <button id="logout" class="quiet hidden">Sign out</button>
+  </header>
+
+  <main>
+    <section id="login" class="login">
+      <p class="eyebrow">A PRIVATE COLLECTION</p>
+      <h1>Some moments<br>stay <i>forever.</i></h1>
+      <p class="muted">A little place for the memories that matter.</p>
+
+      <form id="login-form">
+        <label for="email">Email address</label>
+        <input id="email" type="email" placeholder="you@example.com" required>
+        <label for="password">Password</label>
+        <input id="password" type="password" autocomplete="current-password" required>
+        <button class="primary" type="submit">Enter your album ↗</button>
+      </form>
+      <p id="login-message" class="message"></p>
+
+      <section id="key-gate" class="hidden">
+        <h2>This album has a key.</h2>
+        <p class="muted">Enter the security key given to you by the owner.</p>
+        <form id="key-form">
+          <label for="album-key">Security key</label>
+          <input id="album-key" type="password" required minlength="8">
+          <button class="primary">Unlock album ↗</button>
+        </form>
+        <p id="key-message" class="message"></p>
+      </section>
+    </section>
+
+    <section id="album" class="hidden">
+      <div class="hero">
+        <p class="eyebrow">THE MEMORY JOURNAL</p>
+        <h1>Little things,<br><i>eternally ours.</i></h1>
+        <p class="muted">Every picture has a story. This is where yours live.</p>
+      </div>
+
+      <div class="toolbar">
+        <span id="photo-count">Your memories</span>
+        <div class="actions">
+          <button id="share-toggle" class="secondary">Sharing settings</button>
+          <button id="add-photo" class="primary">＋ Add memory</button>
+        </div>
+      </div>
+
+      <section id="share-panel" class="panel hidden">
+        <h2>Share a little piece of your world.</h2>
+        <p class="muted">Set a strong security key before sharing. Only share the key with people you trust.</p>
+        <label for="new-key">Security key (at least 12 characters recommended)</label>
+        <input id="new-key" type="password" minlength="8" maxlength="128">
+        <button id="save-key" class="secondary">Set security key</button>
+        <label for="share-url">Private sharing link</label>
+        <input id="share-url" readonly placeholder="Create a link first">
+        <div class="actions">
+          <button id="create-link" class="secondary">Create link</button>
+          <button id="copy-link" class="secondary">Copy link</button>
+          <button id="revoke-link" class="quiet">Disable sharing</button>
+        </div>
+        <p id="share-message" class="message"></p>
+      </section>
+
+      <section id="editor" class="panel hidden">
+        <h2 id="editor-heading">Add a memory</h2>
+        <form id="memory-form">
+          <label for="photo">Choose a photograph</label>
+          <input id="photo" type="file" accept="image/*">
+          <label for="title">Title</label>
+          <input id="title" maxlength="120" placeholder="A day worth remembering">
+          <label for="caption">Your story</label>
+          <textarea id="caption" rows="5" maxlength="5000" placeholder="Write whatever you want to remember..."></textarea>
+          <label for="memory-date">Date</label>
+          <input id="memory-date" type="date">
+          <div class="actions">
+            <button class="primary" type="submit">Save memory</button>
+            <button id="cancel-edit" type="button" class="quiet">Cancel</button>
+          </div>
+          <p id="editor-message" class="message"></p>
+        </form>
+      </section>
+
+      <div id="memories" class="memories"></div>
+      <footer>Made of moments, kept with love. <span>♥</span></footer>
+    </section>
+  </main>
+</body>
+</html>
