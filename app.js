@@ -632,3 +632,4 @@ async function startApp() {
 }
 
 document.addEventListener("DOMContentLoaded", startApp);
+document.documentElement.classList.add("afterglow-ready");
