@@ -70,7 +70,7 @@ color: "#f8edff",
 fontFamily: "Inter, sans-serif"
 });
 
-gate.innerHTML = "<form id="viewer-login-form" style="width:100%;max-width:380px;padding:30px 24px; border:1px solid #68457d;border-radius:18px; background:#170e25;text-align:center"> <p style="letter-spacing:4px;font-size:11px;color:#d4a8ff"> AFTERGLOW ✦ </p> <h2 style="font-family:Georgia,serif;font-size:32px;font-weight:400"> A private <em>universe</em> </h2> <p style="color:#c7b7d2;line-height:1.7"> Enter the viewing password to open the memory archive. </p> <input id="viewer-password" type="password" autocomplete="current-password" required placeholder="Viewing password" style="box-sizing:border-box;width:100%;padding:14px; margin:12px 0;border:1px solid #60416f;border-radius:9px; background:#10091d;color:white;font-size:16px"> <button type="submit" style="width:100%;padding:14px;border:0;border-radius:9px; background:#b88be4;color:#160c20;font-weight:600;font-size:15px"> Open memories </button> <p id="viewer-error" role="status" style="color:#ff9baf;font-size:13px"></p> </form>";
+gate.innerHTML = " <form id="viewer-login-form" style="width:100%;max-width:380px;padding:30px 24px;border:1px solid #68457d;border-radius:18px;background:#170e25;text-align:center"> <p style="letter-spacing:4px;font-size:11px;color:#d4a8ff">AFTERGLOW ✦</p> <h2 style="font-family:Georgia,serif;font-size:32px;font-weight:400">A private <em>universe</em></h2> <p style="color:#c7b7d2;line-height:1.7">Enter the viewing password to open the memory archive.</p> <input id="viewer-password" type="password" autocomplete="current-password" required placeholder="Viewing password" style="box-sizing:border-box;width:100%;padding:14px;margin:12px 0;border:1px solid #60416f;border-radius:9px;background:#10091d;color:white;font-size:16px"> <button type="submit" style="width:100%;padding:14px;border:0;border-radius:9px;background:#b88be4;color:#160c20;font-weight:600;font-size:15px">Open memories</button> <p id="viewer-error" role="status" style="color:#ff9baf;font-size:13px"></p> </form>";
 
 document.body.appendChild(gate);
 $("viewer-login-form").addEventListener("submit", viewerLogin);
@@ -451,10 +451,11 @@ await request("save", {
 
 showMessage("Memory saved successfully.");
 
+const savedId = selectedMemory.id;
 await loadMemories();
 
 const updatedIndex = memories.findIndex(
-  (memory) => String(memory.id) === String(selectedMemory.id)
+  (memory) => String(memory.id) === String(savedId)
 );
 
 if (updatedIndex >= 0) {
@@ -577,10 +578,6 @@ setupOwnerForm();
 
 setSiteVisible(false);
 makeGate();
-
-// The gallery is hidden and the password gate exists before
-// the initial loading-protection CSS is released.
-document.documentElement.classList.add("afterglow-ready");
 
 const ownerToken = sessionStorage.getItem("afterglow_owner_token");
 const viewToken = sessionStorage.getItem("afterglow_view_token");
