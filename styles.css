@@ -1,0 +1,843 @@
+/* =========================================
+   AFTERGLOW — A LITTLE WORLD OF MEMORIES
+   Romantic • Cinematic • Elegant
+========================================= */
+
+@import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Playfair+Display:ital,wght@0,400;0,500;0,600;0,700;1,400;1,500&display=swap');
+
+/* ---------- 1. DESIGN SYSTEM ---------- */
+
+:root {
+  color-scheme: dark;
+
+  --bg: #0d0a10;
+  --bg-soft: #120e15;
+  --surface: #19131d;
+  --surface-hover: #241a28;
+
+  --text: #f8f0f5;
+  --muted: #b3a2b1;
+  --subtle: #796b7b;
+
+  --accent: #e5b3cc;
+  --accent-light: #f5d8e6;
+  --accent-dark: #a76d91;
+
+  --border: rgba(229, 179, 204, 0.16);
+  --border-hover: rgba(229, 179, 204, 0.42);
+
+  --serif: 'Playfair Display', Georgia, serif;
+  --sans: 'DM Sans', sans-serif;
+
+  --radius-sm: 8px;
+  --radius-md: 14px;
+  --radius-lg: 22px;
+
+  --ease: cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+/* ---------- 2. RESET ---------- */
+
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+html {
+  scroll-behavior: smooth;
+  scroll-padding-top: 30px;
+  background: var(--bg);
+  -webkit-text-size-adjust: 100%;
+}
+
+body {
+  min-height: 100vh;
+  overflow-x: hidden;
+  background:
+    radial-gradient(
+      ellipse at 50% 0%,
+      rgba(91, 46, 81, 0.15),
+      transparent 48%
+    ),
+    var(--bg);
+  color: var(--text);
+  font-family: var(--sans);
+  font-size: 14px;
+  line-height: 1.8;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+body::selection {
+  background: var(--accent);
+  color: var(--bg);
+}
+
+::selection {
+  background: var(--accent);
+  color: var(--bg);
+}
+
+img {
+  max-width: 100%;
+}
+
+a {
+  color: inherit;
+}
+
+button {
+  font: inherit;
+}
+
+button,
+a,
+.photo-card {
+  -webkit-tap-highlight-color: transparent;
+}
+
+a:focus-visible,
+button:focus-visible,
+.photo-card:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 5px;
+}
+
+::focus:not(:focus-visible) {
+  outline: none;
+}
+
+/* ---------- 3. HERO SECTION ---------- */
+
+.hero {
+  position: relative;
+  isolation: isolate;
+  min-height: 90svh;
+  padding: 110px 24px 90px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  overflow: hidden;
+
+  background:
+    radial-gradient(
+      ellipse at 50% 40%,
+      rgba(106, 53, 91, 0.28) 0%,
+      rgba(52, 30, 51, 0.13) 35%,
+      transparent 68%
+    ),
+    linear-gradient(
+      180deg,
+      #110c14 0%,
+      #151019 65%,
+      var(--bg) 100%
+    );
+}
+
+/* Subtle cinematic light */
+
+.hero::before {
+  content: '';
+  position: absolute;
+  z-index: -1;
+  width: min(75vw, 520px);
+  aspect-ratio: 1;
+  left: 50%;
+  top: 48%;
+  transform: translate(-50%, -50%);
+  border-radius: 50%;
+  background: rgba(160, 91, 137, 0.09);
+  filter: blur(90px);
+  pointer-events: none;
+}
+
+.hero::after {
+  content: '';
+  position: absolute;
+  left: 50%;
+  bottom: 0;
+  width: min(80%, 450px);
+  height: 1px;
+  transform: translateX(-50%);
+  background: linear-gradient(
+    90deg,
+    transparent,
+    var(--border-hover),
+    transparent
+  );
+}
+
+.eyebrow {
+  color: var(--accent);
+  font-family: var(--sans);
+  font-size: 10px;
+  font-weight: 600;
+  line-height: 1.8;
+  letter-spacing: 3.5px;
+  text-transform: uppercase;
+}
+
+.hero .eyebrow {
+  animation: rise-in 1s var(--ease) both;
+}
+
+.hero h1 {
+  margin: 22px 0 18px;
+  font-family: var(--serif);
+  font-size: clamp(60px, 14vw, 112px);
+  font-weight: 400;
+  letter-spacing: -4px;
+  line-height: 1.05;
+  animation: rise-in 1s 0.1s var(--ease) both;
+}
+
+.hero h1 span {
+  color: var(--accent);
+  text-shadow: 0 0 45px rgba(229, 179, 204, 0.18);
+}
+
+.subtitle {
+  max-width: 340px;
+  color: var(--muted);
+  font-size: 13px;
+  font-weight: 400;
+  letter-spacing: 0.3px;
+  animation: rise-in 1s 0.2s var(--ease) both;
+}
+
+.explore {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 46px;
+  margin-top: 38px;
+  padding: 11px 24px;
+
+  border: 1px solid var(--border-hover);
+  border-radius: 100px;
+
+  background: rgba(255, 255, 255, 0.015);
+  color: var(--text);
+  text-decoration: none;
+  font-size: 11px;
+  letter-spacing: 0.7px;
+
+  transition:
+    background 0.35s ease,
+    border-color 0.35s ease,
+    color 0.35s ease,
+    transform 0.35s var(--ease);
+
+  animation: rise-in 1s 0.3s var(--ease) both;
+}
+
+.explore:hover {
+  background: rgba(229, 179, 204, 0.1);
+  border-color: var(--accent);
+  color: var(--accent-light);
+  transform: translateY(-3px);
+}
+
+.explore:active {
+  transform: translateY(0) scale(0.98);
+}
+
+/* ---------- 4. INTRODUCTION ---------- */
+
+.intro {
+  position: relative;
+  padding: 110px 24px 90px;
+  text-align: center;
+}
+
+.intro .eyebrow {
+  margin-bottom: 24px;
+}
+
+.intro h2,
+.closing h2 {
+  font-family: var(--serif);
+  font-size: clamp(33px, 7.5vw, 55px);
+  font-weight: 400;
+  letter-spacing: -1.3px;
+  line-height: 1.32;
+}
+
+.intro h2 {
+  margin-bottom: 23px;
+}
+
+.intro > p:last-child,
+.closing > p:last-child {
+  color: var(--muted);
+  font-size: 12px;
+  letter-spacing: 0.3px;
+}
+
+/* ---------- 5. GALLERY SECTION ---------- */
+
+.gallery-section {
+  width: 100%;
+  max-width: 1180px;
+  margin: 0 auto;
+  padding: 30px 20px 110px;
+}
+
+.section-heading {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 15px;
+  margin-bottom: 30px;
+}
+
+.section-heading .eyebrow {
+  margin-bottom: 7px;
+}
+
+.section-heading h2 {
+  font-family: var(--serif);
+  font-size: clamp(29px, 6vw, 39px);
+  font-weight: 400;
+  letter-spacing: -0.7px;
+  line-height: 1.3;
+}
+
+#photo-count {
+  flex-shrink: 0;
+  padding-bottom: 5px;
+  color: var(--subtle);
+  font-size: 10px;
+  letter-spacing: 0.5px;
+}
+
+/* Masonry-style gallery */
+
+.gallery-grid {
+  columns: 2;
+  column-gap: 13px;
+}
+
+/* ---------- 6. PHOTO CARDS ---------- */
+
+.photo-card {
+  position: relative;
+  display: inline-block;
+  width: 100%;
+  margin: 0 0 13px;
+  overflow: hidden;
+  break-inside: avoid;
+  vertical-align: top;
+
+  border: 1px solid rgba(255, 255, 255, 0.035);
+  border-radius: var(--radius-sm);
+
+  background: var(--surface);
+  cursor: pointer;
+
+  animation: card-appear 0.8s var(--ease) both;
+
+  transition:
+    border-color 0.4s ease,
+    box-shadow 0.4s ease,
+    transform 0.4s var(--ease);
+}
+
+.photo-card:nth-child(3n + 2) {
+  animation-delay: 0.08s;
+}
+
+.photo-card:nth-child(3n + 3) {
+  animation-delay: 0.15s;
+}
+
+.photo-card img {
+  display: block;
+  width: 100%;
+  height: auto;
+  min-height: 100px;
+
+  object-fit: cover;
+  background: var(--surface);
+
+  transition:
+    transform 0.8s var(--ease),
+    filter 0.6s ease,
+    opacity 0.4s ease;
+}
+
+.photo-card:hover {
+  border-color: var(--border-hover);
+  box-shadow: 0 14px 38px rgba(0, 0, 0, 0.2);
+}
+
+.photo-card:hover img {
+  transform: scale(1.035);
+  filter: brightness(0.85);
+}
+
+.photo-caption {
+  padding: 11px 12px 13px;
+  overflow-wrap: anywhere;
+
+  background: var(--surface);
+  color: var(--muted);
+
+  font-family: var(--serif);
+  font-size: 12px;
+  font-style: italic;
+  line-height: 1.6;
+}
+
+/* Empty gallery */
+
+.empty-gallery {
+  padding: 35px 18px;
+  border: 1px dashed var(--border);
+  border-radius: var(--radius-md);
+
+  color: var(--muted);
+  font-size: 12px;
+  line-height: 2;
+  text-align: center;
+}
+
+/* ---------- 7. CLOSING SECTION ---------- */
+
+.closing {
+  position: relative;
+  overflow: hidden;
+  padding: 100px 24px 115px;
+  text-align: center;
+
+  background:
+    radial-gradient(
+      ellipse at 50% 100%,
+      rgba(102, 51, 91, 0.2),
+      transparent 65%
+    ),
+    linear-gradient(
+      180deg,
+      var(--bg) 0%,
+      #17101b 100%
+    );
+}
+
+.closing::before {
+  content: '✦';
+  display: block;
+  margin-bottom: 25px;
+
+  color: var(--accent-dark);
+  font-size: 18px;
+  opacity: 0.8;
+}
+
+.closing .eyebrow {
+  margin-bottom: 18px;
+}
+
+.closing h2 {
+  margin-bottom: 20px;
+  font-size: clamp(31px, 7vw, 48px);
+}
+
+/* ---------- 8. FOOTER ---------- */
+
+footer {
+  padding: 27px 20px 32px;
+  border-top: 1px solid rgba(255, 255, 255, 0.045);
+
+  background: #0b080d;
+  color: var(--subtle);
+  text-align: center;
+  font-size: 10px;
+  letter-spacing: 0.2px;
+}
+
+footer span {
+  display: block;
+  margin-top: 12px;
+
+  color: var(--accent-dark);
+  font-size: 9px;
+  font-weight: 500;
+  letter-spacing: 2.5px;
+}
+
+/* ---------- 9. FULLSCREEN PHOTO VIEWER ---------- */
+
+.lightbox {
+  position: fixed;
+  inset: 0;
+  z-index: 1000;
+
+  display: none;
+  align-items: center;
+  justify-content: center;
+
+  width: 100%;
+  height: 100%;
+  height: 100dvh;
+  padding: 65px 48px 45px;
+
+  overflow: hidden;
+  overscroll-behavior: contain;
+
+  background: rgba(8, 6, 10, 0.97);
+  -webkit-backdrop-filter: blur(18px);
+  backdrop-filter: blur(18px);
+}
+
+.lightbox.open {
+  display: flex;
+  animation: lightbox-fade 0.25s ease both;
+}
+
+.lightbox figure {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+
+  width: 100%;
+  max-width: 1100px;
+  max-height: 100%;
+  margin: 0;
+}
+
+.lightbox figure img {
+  display: block;
+
+  width: auto;
+  height: auto;
+  max-width: 100%;
+  max-height: 76dvh;
+
+  object-fit: contain;
+  border-radius: 4px;
+
+  box-shadow: 0 18px 70px rgba(0, 0, 0, 0.3);
+  animation: image-appear 0.35s var(--ease) both;
+}
+
+.lightbox figcaption {
+  max-width: 100%;
+  margin-top: 18px;
+  padding: 0 10px;
+
+  color: var(--accent-light);
+  font-family: var(--serif);
+  font-size: 14px;
+  font-style: italic;
+  line-height: 1.6;
+  text-align: center;
+  overflow-wrap: anywhere;
+}
+
+/* Close button */
+
+.close-button {
+  position: absolute;
+  top: max(15px, env(safe-area-inset-top));
+  right: max(18px, env(safe-area-inset-right));
+  z-index: 2;
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  width: 45px;
+  height: 45px;
+  padding: 0;
+
+  border: 1px solid transparent;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.045);
+
+  color: var(--text);
+  font-family: var(--sans);
+  font-size: 29px;
+  font-weight: 400;
+  line-height: 1;
+
+  cursor: pointer;
+  transition:
+    background 0.25s ease,
+    border-color 0.25s ease,
+    transform 0.25s ease;
+}
+
+.close-button:hover {
+  background: rgba(229, 179, 204, 0.12);
+  border-color: var(--border-hover);
+  transform: rotate(90deg);
+}
+
+/* Previous and next buttons */
+
+.nav-button {
+  position: absolute;
+  top: 50%;
+  z-index: 2;
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  width: 43px;
+  height: 55px;
+  padding: 0;
+
+  transform: translateY(-50%);
+  border: 1px solid transparent;
+  border-radius: 100px;
+  background: rgba(255, 255, 255, 0.045);
+
+  color: var(--text);
+  font-family: var(--serif);
+  font-size: 35px;
+  font-weight: 400;
+  line-height: 1;
+
+  cursor: pointer;
+  transition:
+    background 0.25s ease,
+    border-color 0.25s ease,
+    color 0.25s ease;
+}
+
+.nav-button:hover {
+  border-color: var(--border-hover);
+  background: rgba(229, 179, 204, 0.13);
+  color: var(--accent-light);
+}
+
+.prev {
+  left: max(10px, env(safe-area-inset-left));
+}
+
+.next {
+  right: max(10px, env(safe-area-inset-right));
+}
+
+/* ---------- 10. ANIMATIONS ---------- */
+
+@keyframes rise-in {
+  from {
+    opacity: 0;
+    transform: translateY(22px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes card-appear {
+  from {
+    opacity: 0;
+    transform: translateY(14px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes lightbox-fade {
+  from {
+    opacity: 0;
+  }
+
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes image-appear {
+  from {
+    opacity: 0;
+    transform: scale(0.985);
+  }
+
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+/* ---------- 11. TABLET ---------- */
+
+@media (min-width: 600px) {
+  .hero {
+    min-height: 92svh;
+    padding: 100px 30px;
+  }
+
+  .intro {
+    padding-top: 125px;
+    padding-bottom: 100px;
+  }
+
+  .gallery-section {
+    padding-right: 30px;
+    padding-left: 30px;
+  }
+
+  .gallery-grid {
+    columns: 3;
+    column-gap: 17px;
+  }
+
+  .photo-card {
+    margin-bottom: 17px;
+    border-radius: var(--radius-md);
+  }
+
+  .photo-caption {
+    padding: 13px 14px 15px;
+  }
+}
+
+/* ---------- 12. DESKTOP ---------- */
+
+@media (min-width: 1000px) {
+  .gallery-section {
+    padding-right: 40px;
+    padding-left: 40px;
+  }
+
+  .gallery-grid {
+    columns: 4;
+    column-gap: 20px;
+  }
+
+  .photo-card {
+    margin-bottom: 20px;
+  }
+
+  .section-heading {
+    margin-bottom: 38px;
+  }
+
+  .hero h1 {
+    font-size: 112px;
+  }
+
+  .closing {
+    padding-top: 125px;
+    padding-bottom: 135px;
+  }
+}
+
+/* ---------- 13. SMALL PHONES ---------- */
+
+@media (max-width: 360px) {
+  .hero {
+    padding-right: 17px;
+    padding-left: 17px;
+  }
+
+  .hero h1 {
+    font-size: 56px;
+    letter-spacing: -2.5px;
+  }
+
+  .hero .eyebrow,
+  .eyebrow {
+    font-size: 9px;
+    letter-spacing: 2.3px;
+  }
+
+  .gallery-section {
+    padding-right: 12px;
+    padding-left: 12px;
+  }
+
+  .gallery-grid {
+    column-gap: 9px;
+  }
+
+  .photo-card {
+    margin-bottom: 9px;
+  }
+
+  .photo-caption {
+    padding: 9px;
+    font-size: 11px;
+  }
+
+  .lightbox {
+    padding-right: 36px;
+    padding-left: 36px;
+  }
+
+  .nav-button {
+    width: 31px;
+    height: 45px;
+    font-size: 29px;
+  }
+}
+
+/* ---------- 14. LANDSCAPE PHONES ---------- */
+
+@media (max-height: 500px) and (orientation: landscape) {
+  .hero {
+    min-height: 115svh;
+    padding-top: 45px;
+    padding-bottom: 45px;
+  }
+
+  .hero h1 {
+    margin: 10px 0;
+    font-size: 58px;
+  }
+
+  .explore {
+    margin-top: 18px;
+  }
+
+  .lightbox {
+    padding-top: 45px;
+    padding-bottom: 20px;
+  }
+
+  .lightbox figure img {
+    max-height: 68dvh;
+  }
+}
+
+/* ---------- 15. ACCESSIBILITY ---------- */
+
+@media (hover: none) {
+  .photo-card:hover {
+    border-color: rgba(255, 255, 255, 0.035);
+    box-shadow: none;
+  }
+
+  .photo-card:hover img {
+    transform: none;
+    filter: none;
+  }
+
+  .explore:hover {
+    transform: none;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    scroll-behavior: auto !important;
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}
