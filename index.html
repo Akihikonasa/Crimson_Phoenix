@@ -68,6 +68,34 @@
     <span>Every memory leaves a light.</span>
   </footer>
 
+  <!-- Tiny floating music player -->
+  <audio id="afterglow-music" preload="auto"></audio>
+
+  <div id="music-player" class="music-player">
+    <div id="music-details" class="music-details" hidden>
+      <span class="music-label">NOW PLAYING</span>
+      <span id="music-title" class="music-title">Afterglow</span>
+
+      <div class="music-controls">
+        <button id="music-previous" type="button"
+          aria-label="Previous song">‹</button>
+
+        <button id="music-play-pause" type="button"
+          aria-label="Play or pause music">Ⅱ</button>
+
+        <button id="music-next" type="button"
+          aria-label="Next song">›</button>
+      </div>
+    </div>
+
+    <button id="music-toggle" class="music-toggle"
+      type="button" aria-label="Open music controls"
+      aria-expanded="false">
+      <span id="music-icon" aria-hidden="true">♫</span>
+      <span class="music-halo" aria-hidden="true"></span>
+    </button>
+  </div>
+
   <!-- Owner login and editing panel -->
   <div id="owner-modal" class="modal" aria-hidden="true">
     <div class="modal-backdrop" data-close-modal></div>
@@ -146,4 +174,4 @@
     </p>
   </noscript>
 </body>
-                         </html>
+</html>
