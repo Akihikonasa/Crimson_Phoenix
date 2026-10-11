@@ -139,9 +139,15 @@ async function viewerLogin(event) {
     sessionStorage.setItem("afterglow_view_token", currentToken);
     sessionStorage.removeItem("afterglow_owner_token");
 
-    await loadMemories();
-    setSiteVisible(true);
-    errorEl.textContent = "";
+  setSiteVisible(true);
+errorEl.textContent = "";
+
+try {
+  await loadMemories();
+} catch (error) {
+  console.error("Could not load memories:", error);
+  errorEl.textContent = "Password accepted, but memories could not load. Please try again.";
+}
   } catch (error) {
     errorEl.textContent = error.message || "Could not open the archive.";
   }
