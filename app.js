@@ -205,9 +205,13 @@ function setupOwnerForm() {
   const passwordLabel = document.querySelector(
     'label[for="owner-password"]'
   );
-  if (passwordLabel) passwordLabel.textContent = "Owner password";
+
+  if (passwordLabel) {
+    passwordLabel.textContent = "Owner password";
+  }
 
   const password = $("owner-password");
+
   if (password) {
     password.autocomplete = "current-password";
     password.placeholder = "Your owner password";
@@ -225,11 +229,16 @@ function setupOwnerForm() {
     } else {
       $("login-form").hidden = false;
       $("editor").hidden = true;
-      setOwnerStatus("Enter the owner password to manage memories.");
+      setOwnerStatus(
+        "Enter the owner password to manage memories."
+      );
     }
   });
 
-  $("close-modal")?.addEventListener("click", closeOwnerModal);
+  $("close-modal")?.addEventListener(
+    "click",
+    closeOwnerModal
+  );
 
   document.querySelectorAll("[data-close-modal]").forEach((el) => {
     el.addEventListener("click", closeOwnerModal);
