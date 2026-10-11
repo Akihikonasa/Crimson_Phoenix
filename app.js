@@ -1,4 +1,3 @@
-
 const CONFIG = window.AFTERGLOW_CONFIG;
 const GATEWAY =
   "https://wttkmkrzdkeqidjxllrs.supabase.co/functions/v1/afterglow-gateway-v2";
@@ -118,7 +117,10 @@ function setSiteVisible(visible) {
     });
 
   const gate = $("viewer-gate");
-  if (gate) gate.hidden = visible;
+  if (gate) {
+    gate.hidden = visible;
+    gate.style.display = visible ? "none" : "flex";
+  }
 }
 
 async function viewerLogin(event) {
@@ -139,15 +141,16 @@ async function viewerLogin(event) {
     sessionStorage.setItem("afterglow_view_token", currentToken);
     sessionStorage.removeItem("afterglow_owner_token");
 
-  setSiteVisible(true);
-errorEl.textContent = "";
+    setSiteVisible(true);
+    errorEl.textContent = "";
 
-try {
-  await loadMemories();
-} catch (error) {
-  console.error("Could not load memories:", error);
-  errorEl.textContent = "Password accepted, but memories could not load. Please try again.";
-}
+    try {
+      await loadMemories();
+    } catch (error) {
+      console.error("Could not load memories:", error);
+      errorEl.textContent =
+        "Password accepted, but memories could not load. Please refresh and try again.";
+    }
   } catch (error) {
     errorEl.textContent = error.message || "Could not open the archive.";
   }
@@ -219,11 +222,19 @@ async function ownerLogin(event) {
     $("owner-password").value = "";
     $("login-form").hidden = true;
     $("editor").hidden = false;
+
     setOwnerStatus("Owner access granted.");
     showMessage("You're signed in.");
 
-    await loadMemories();
     setSiteVisible(true);
+    closeOwnerModal();
+
+    try {
+      await loadMemories();
+    } catch (error) {
+      console.error("Could not load memories:", error);
+      showMessage("Owner login worked, but memories could not load.", true);
+    }
   } catch (error) {
     setOwnerStatus(error.message || "Owner login failed.");
   }
@@ -232,13 +243,17 @@ async function ownerLogin(event) {
 function ownerLogout() {
   sessionStorage.removeItem("afterglow_owner_token");
   sessionStorage.removeItem("afterglow_view_token");
+
   currentToken = "";
   currentRole = "";
+
   $("login-form").hidden = false;
   $("editor").hidden = true;
+
   closeOwnerModal();
   setSiteVisible(false);
   makeGate();
+
   $("viewer-password").value = "";
 }
 
@@ -302,7 +317,9 @@ function renderGallery() {
 
     if (memory.image_url && /^https?:\/\//i.test(memory.image_url)) {
       image.src = memory.image_url;
-      image.addEventListener("load", () => placeholder.hidden = true);
+      image.addEventListener("load", () => {
+        placeholder.hidden = true;
+      });
       image.addEventListener("error", () => {
         image.hidden = true;
         placeholder.hidden = false;
@@ -332,7 +349,8 @@ function renderGallery() {
 
     const body = document.createElement("p");
     body.className = "memory-body";
-    body.textContent = memory.body || "A space waiting for a memory to be written.";
+    body.textContent =
+      memory.body || "A space waiting for a memory to be written.";
 
     copy.append(kicker, title, divider, body);
     panel.append(visual, copy);
@@ -340,6 +358,7 @@ function renderGallery() {
   });
 
   const panels = gallery.querySelectorAll(".memory-panel");
+
   if ("IntersectionObserver" in window) {
     const observer = new IntersectionObserver((entries) => {
       entries.forEach((entry) => {
@@ -365,7 +384,8 @@ function populateMemorySelect() {
   memories.forEach((memory, index) => {
     const option = document.createElement("option");
     option.value = String(index);
-    option.textContent = `${String(index + 1).padStart(2, "0")} — ${memory.title}`;
+    option.textContent =
+      `${String(index + 1).padStart(2, "0")} — ${memory.title}`;
     select.appendChild(option);
   });
 
@@ -384,6 +404,7 @@ function chooseMemory() {
   $("memory-title").value = selectedMemory.title || "";
   $("memory-body").value = selectedMemory.body || "";
   $("memory-image").value = "";
+
   showMessage("");
 }
 
@@ -406,7 +427,10 @@ async function saveMemory() {
       }
 
       const allowedTypes = [
-        "image/jpeg", "image/png", "image/webp", "image/gif"
+        "image/jpeg",
+        "image/png",
+        "image/webp",
+        "image/gif"
       ];
 
       if (!allowedTypes.includes(file.type)) {
@@ -436,6 +460,7 @@ async function saveMemory() {
         });
 
       if (error) throw error;
+
       imagePath = prepared.path;
     }
 
@@ -447,11 +472,17 @@ async function saveMemory() {
     });
 
     showMessage("Memory saved successfully.");
+
     await loadMemories();
-    $("memory-select").value = String(
-      memories.findIndex((memory) => String(memory.id) === String(selectedMemory.id))
+
+    const updatedIndex = memories.findIndex(
+      (memory) => String(memory.id) === String(selectedMemory.id)
     );
-    chooseMemory();
+
+    if (updatedIndex >= 0) {
+      $("memory-select").value = String(updatedIndex);
+      chooseMemory();
+    }
   } catch (error) {
     showMessage(error.message || "Could not save this memory.", true);
   } finally {
@@ -467,8 +498,10 @@ async function removeImage() {
 
   try {
     await request("remove_image", { id: selectedMemory.id });
+
     selectedMemory.image_url = null;
     selectedMemory.image_path = null;
+
     showMessage("Photo removed from this memory.");
     await loadMemories();
   } catch (error) {
@@ -483,17 +516,18 @@ function initParticles() {
   const ctx = canvas.getContext("2d");
   if (!ctx) return;
 
-  let width = 0;
-  let height = 0;
   let animationId = 0;
   const particles = [];
 
   function resize() {
-    width = canvas.width = window.innerWidth * (window.devicePixelRatio || 1);
-    height = canvas.height = window.innerHeight * (window.devicePixelRatio || 1);
+    const ratio = window.devicePixelRatio || 1;
+
+    canvas.width = window.innerWidth * ratio;
+    canvas.height = window.innerHeight * ratio;
     canvas.style.width = `${window.innerWidth}px`;
     canvas.style.height = `${window.innerHeight}px`;
-    ctx.setTransform(window.devicePixelRatio || 1, 0, 0, window.devicePixelRatio || 1, 0, 0);
+
+    ctx.setTransform(ratio, 0, 0, ratio, 0, 0);
   }
 
   function createParticle() {
@@ -506,20 +540,29 @@ function initParticles() {
     };
   }
 
-  for (let i = 0; i < 55; i++) particles.push(createParticle());
+  for (let i = 0; i < 55; i++) {
+    particles.push(createParticle());
+  }
 
   function draw() {
     ctx.clearRect(0, 0, window.innerWidth, window.innerHeight);
 
     particles.forEach((particle) => {
       particle.y -= particle.speed;
+
       if (particle.y < -5) {
         particle.y = window.innerHeight + 5;
         particle.x = Math.random() * window.innerWidth;
       }
 
       ctx.beginPath();
-      ctx.arc(particle.x, particle.y, particle.radius, 0, Math.PI * 2);
+      ctx.arc(
+        particle.x,
+        particle.y,
+        particle.radius,
+        0,
+        Math.PI * 2
+      );
       ctx.fillStyle = `rgba(205,166,255,${particle.alpha})`;
       ctx.fill();
     });
@@ -538,7 +581,9 @@ function initParticles() {
 
   resize();
   start();
+
   window.addEventListener("resize", resize);
+
   document.addEventListener("visibilitychange", () => {
     document.hidden ? stop() : start();
   });
@@ -548,7 +593,6 @@ async function startApp() {
   initParticles();
   setupOwnerForm();
 
-  // Hide the archive until a valid password session is confirmed.
   setSiteVisible(false);
   makeGate();
 
@@ -561,6 +605,7 @@ async function startApp() {
     try {
       currentToken = token;
       await loadMemories();
+
       currentRole = token === ownerToken ? "owner" : "view";
       setSiteVisible(true);
 
@@ -571,15 +616,17 @@ async function startApp() {
       }
 
       return;
-    } catch {
-      // Expired or invalid session: try the other token or request login.
+    } catch (error) {
+      console.error("Could not restore session:", error);
     }
   }
 
   currentToken = "";
   currentRole = "";
+
   sessionStorage.removeItem("afterglow_owner_token");
   sessionStorage.removeItem("afterglow_view_token");
+
   makeGate();
   setSiteVisible(false);
 }
