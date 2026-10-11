@@ -1,124 +1,149 @@
-
 <!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <meta name="theme-color" content="#180b11">
-  <meta name="description" content="A little collection of beautiful moments, kept forever in Afterglow.">
-  <title>Afterglow — A Little Forever</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#10091d">
+  <meta name="description" content="Afterglow — a collection of memories that never fade.">
+
+  <title>Afterglow — Eternal Memories</title>
 
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Playfair+Display:ital,wght@0,400;0,500;0,600;1,400;1,500&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@400;500;600;700&family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet">
 
   <link rel="stylesheet" href="styles.css">
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="config.js" defer></script>
+  <script src="app.js" defer></script>
 </head>
-<body>
-  <div class="ambient ambient-one"></div>
-  <div class="ambient ambient-two"></div>
 
-  <header class="topbar">
-    <a class="brand" href="#home">afterglow<span>®</span></a>
-    <a class="top-link" href="#memories">THE GALLERY <span>↗</span></a>
+<body>
+  <canvas id="particles" aria-hidden="true"></canvas>
+
+  <header class="site-header">
+    <a class="brand" href="#home">AFTERGLOW<span>✦</span></a>
+    <button id="owner-button" class="owner-button" type="button">
+      Owner Login
+    </button>
   </header>
 
   <main>
-    <section class="hero" id="home">
-      <div class="hero-content">
-        <div class="eyebrow">
-          <span class="eyebrow-line"></span>
-          A LITTLE CORNER OF FOREVER
-          <span class="eyebrow-line"></span>
-        </div>
-
-        <h1>Some moments<br>feel like <em>forever.</em></h1>
-
-        <p class="hero-description">
-          Little memories, quiet feelings, and beautiful moments
-          that deserve to stay a little longer.
-        </p>
-
-        <a class="explore-button" href="#memories">
-          <span>Wander through memories</span>
-          <span class="button-arrow">↓</span>
-        </a>
-
-        <div class="hero-footnote">
-          <span>MADE WITH A LITTLE LOVE</span>
-          <span class="tiny-heart">♥</span>
-          <span>KEPT WITH CARE</span>
-        </div>
-      </div>
-
-      <div class="hero-decoration" aria-hidden="true">
-        <span class="decor-star star-one">✳</span>
-        <span class="decor-star star-two">✦</span>
-        <span class="decor-heart">♡</span>
-        <span class="decor-orbit"></span>
-      </div>
+    <section id="home" class="hero">
+      <div class="hero-orb" aria-hidden="true"></div>
+      <p class="eyebrow">A LITTLE UNIVERSE OF MEMORIES</p>
+      <h1>Some moments<br>become <em>eternal.</em></h1>
+      <p class="hero-description">
+        A place for the moments, words, and feelings
+        that time could never truly take away.
+      </p>
+      <a class="explore-button" href="#memories">
+        Explore our memories <span>↓</span>
+      </a>
+      <div class="phoenix-mark" aria-hidden="true">♨</div>
     </section>
 
-    <section class="gallery-section" id="memories">
-      <div class="section-topline">
-        <span class="section-kicker">THE LITTLE THINGS</span>
-        <span class="section-number">COLLECTION Nº 01</span>
-      </div>
-
+    <section id="memories" class="memories-section">
       <div class="section-heading">
-        <div>
-          <h2>Moments in <em>bloom.</em></h2>
-          <p class="section-description">
-            Every picture holds a feeling words could never quite explain.
-          </p>
-        </div>
-        <div class="memory-counter">
-          <span id="photo-count">0 memories</span>
-          <span class="counter-heart">♡</span>
-        </div>
+        <p class="eyebrow">FRAGMENTS OF FOREVER</p>
+        <h2>The Memory <em>Archive</em></h2>
+        <p>Twenty-four little windows into a world of memories.</p>
       </div>
 
-      <div class="gallery-grid" id="gallery-grid">
-        <!-- Photos are added by app.js -->
+      <div id="gallery" class="gallery">
+        <div class="loading-message">Gathering the memories…</div>
       </div>
-
-      <p class="gallery-note">
-        TAKE YOUR TIME. THERE'S NO RUSH HERE.
-      </p>
     </section>
 
-    <section class="closing">
-      <span class="closing-ornament">✳</span>
-      <p class="closing-kicker">AND IF TIME EVER MOVES TOO FAST</p>
-      <h2>Let this be a place<br>where <em>moments stay.</em></h2>
-      <p class="closing-message">
-        Some things don't need to last forever to mean everything.
-        Sometimes, remembering is its own kind of magic.
-      </p>
-      <a class="back-to-top" href="#home">BACK TO THE BEGINNING ↑</a>
+    <section class="closing-section">
+      <div class="closing-line"></div>
+      <p class="eyebrow">UNTIL THE STARS FORGET TO SHINE</p>
+      <h2>Some things are<br><em>worth remembering.</em></h2>
+      <p class="closing-note">Made of moments. Kept in Afterglow.</p>
     </section>
   </main>
 
-  <footer>
-    <a class="footer-brand" href="#home">afterglow<span>®</span></a>
-    <p>A small collection of things worth remembering.</p>
-    <span class="footer-heart">MADE WITH ♡</span>
+  <footer class="site-footer">
+    <span>AFTERGLOW ✦</span>
+    <span>Every memory leaves a light.</span>
   </footer>
 
-  <div class="lightbox" id="lightbox" aria-hidden="true">
-    <button class="close-button" id="close-lightbox" aria-label="Close photo">×</button>
-    <button class="nav-button prev" id="prev-photo" aria-label="Previous photo">‹</button>
+  <!-- Owner login and editing panel -->
+  <div id="owner-modal" class="modal" aria-hidden="true">
+    <div class="modal-backdrop" data-close-modal></div>
 
-    <div class="lightbox-content">
-      <img id="lightbox-image" src="" alt="">
-      <p id="lightbox-caption"></p>
-      <span class="lightbox-hint">← SWIPE OR USE ARROWS →</span>
-    </div>
+    <section class="modal-card" role="dialog"
+      aria-modal="true" aria-labelledby="modal-title">
 
-    <button class="nav-button next" id="next-photo" aria-label="Next photo">›</button>
+      <button id="close-modal" class="close-modal"
+        type="button" aria-label="Close">×</button>
+
+      <p class="eyebrow">THE KEEPER'S CORNER</p>
+      <h2 id="modal-title">Owner <em>Access</em></h2>
+      <p id="owner-status" class="owner-status">
+        Sign in to manage your memories.
+      </p>
+
+      <form id="login-form">
+        <label for="owner-email">Email</label>
+        <input id="owner-email" type="email"
+          autocomplete="username" required
+          placeholder="Your owner email">
+
+        <label for="owner-password">Password</label>
+        <input id="owner-password" type="password"
+          autocomplete="current-password" required
+          placeholder="Your password">
+
+        <button class="primary-button" type="submit">
+          Sign in
+        </button>
+      </form>
+
+      <div id="editor" class="editor" hidden>
+        <div class="editor-divider"></div>
+        <h3>Edit a memory</h3>
+
+        <label for="memory-select">Choose a panel</label>
+        <select id="memory-select"></select>
+
+        <label for="memory-title">Memory title</label>
+        <input id="memory-title" maxlength="120"
+          placeholder="Give this memory a title">
+
+        <label for="memory-body">Your words</label>
+        <textarea id="memory-body" rows="6"
+          maxlength="12000"
+          placeholder="Write what you want to remember…"></textarea>
+
+        <label for="memory-image">Upload or replace photo</label>
+        <input id="memory-image" type="file"
+          accept="image/jpeg,image/png,image/webp,image/gif">
+
+        <p class="field-note">
+          Maximum image size: 5 MB. Uploaded photos are publicly viewable
+          through their image links.
+        </p>
+
+        <button id="save-memory" class="primary-button"
+          type="button">Save changes</button>
+
+        <button id="remove-image" class="secondary-button"
+          type="button">Remove photo</button>
+
+        <button id="logout-button" class="secondary-button"
+          type="button">Sign out</button>
+      </div>
+
+      <p id="editor-message" class="editor-message"
+        role="status" aria-live="polite"></p>
+    </section>
   </div>
 
-  <script src="config.js"></script>
-  <script src="app.js"></script>
+  <noscript>
+    <p class="noscript-message">
+      Please enable JavaScript to view the memory archive.
+    </p>
+  </noscript>
 </body>
-</html>
+                         </html>
