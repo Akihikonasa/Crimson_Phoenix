@@ -13,6 +13,141 @@ let currentRole = "";
 let selectedMemory = null;
 let storageClient = null;
 
+/* MUSIC PLAYLIST
+   Upload each MP3 to the same GitHub repository as index.html.
+   Add more songs by adding another { title, src } entry.
+*/
+const MUSIC_PLAYLIST = [
+  { title: "Afterglow", src: "./afterglow-song.mp3" }
+];
+
+let currentSongIndex = 0;
+let musicControlsOpen = false;
+
+function setupMusicPlayer() {
+  const audio = $("afterglow-music");
+  const toggle = $("music-toggle");
+  const playPause = $("music-play-pause");
+  const next = $("music-next");
+  const previous = $("music-previous");
+  const details = $("music-details");
+  const title = $("music-title");
+  const icon = $("music-icon");
+
+  if (!audio || !toggle || !playPause || !next || !previous) return;
+  if (audio.dataset.musicReady === "true") return;
+  audio.dataset.musicReady = "true";
+
+  audio.loop = false;
+  audio.preload = "auto";
+  audio.volume = 0.35;
+
+  function updatePlaybackUI() {
+    const playing = !audio.paused;
+    playPause.textContent = playing ? "Ⅱ" : "▶";
+    playPause.setAttribute(
+      "aria-label",
+      playing ? "Pause music" : "Play music"
+    );
+    toggle.classList.toggle("is-playing", playing);
+    icon.textContent = playing ? "♫" : "♪";
+  }
+
+  function loadSong(index, autoplay = false) {
+    if (!MUSIC_PLAYLIST.length) return;
+
+    currentSongIndex =
+      (index + MUSIC_PLAYLIST.length) % MUSIC_PLAYLIST.length;
+
+    const song = MUSIC_PLAYLIST[currentSongIndex];
+    audio.src = song.src;
+    if (title) title.textContent = song.title;
+    audio.load();
+
+    if (autoplay) {
+      audio.play().catch(() => {
+        updatePlaybackUI();
+      });
+    }
+  }
+
+  async function playMusic() {
+    try {
+      if (!audio.src) loadSong(currentSongIndex, false);
+      await audio.play();
+    } catch (error) {
+      // Browsers may block autoplay until the visitor taps the player.
+      console.info("Tap the music button to start playback.");
+    }
+    updatePlaybackUI();
+  }
+
+  function pauseMusic() {
+    audio.pause();
+    updatePlaybackUI();
+  }
+
+  function toggleControls() {
+    musicControlsOpen = !musicControlsOpen;
+
+    if (details) details.hidden = !musicControlsOpen;
+    toggle.setAttribute("aria-expanded", String(musicControlsOpen));
+    toggle.setAttribute(
+      "aria-label",
+      musicControlsOpen ? "Close music controls" : "Open music controls"
+    );
+
+    // The first tap opens the controls and tries to start the music.
+    if (musicControlsOpen && audio.paused) {
+      playMusic();
+    }
+  }
+
+  toggle.addEventListener("click", toggleControls);
+
+  playPause.addEventListener("click", () => {
+    if (audio.paused) {
+      playMusic();
+    } else {
+      pauseMusic();
+    }
+  });
+
+  next.addEventListener("click", () => {
+    loadSong(currentSongIndex + 1, true);
+  });
+
+  previous.addEventListener("click", () => {
+    // Restart the current song if it has played for more than 3 seconds.
+    if (audio.currentTime > 3) {
+      audio.currentTime = 0;
+      playMusic();
+    } else {
+      loadSong(currentSongIndex - 1, true);
+    }
+  });
+
+  audio.addEventListener("play", updatePlaybackUI);
+  audio.addEventListener("pause", updatePlaybackUI);
+
+  audio.addEventListener("ended", () => {
+    loadSong(currentSongIndex + 1, true);
+  });
+
+  audio.addEventListener("error", () => {
+    console.warn(
+      "Could not load the music file. Check the MP3 filename and repository path."
+    );
+    updatePlaybackUI();
+  });
+
+  loadSong(0, false);
+  updatePlaybackUI();
+
+  // Attempt autoplay; browser restrictions may require a visitor tap.
+  playMusic();
+}
+
 const defaultMemories = Array.from({ length: 24 }, (_, i) => ({
   id: i + 1,
   title: `Memory ${String(i + 1).padStart(2, "0")}`,
@@ -53,7 +188,6 @@ function setOwnerStatus(message) {
   if (el) el.textContent = message;
 }
 
-/* FIX: Support both possible modal class names. */
 function openOwnerModal() {
   const modal = $("owner-modal");
   if (!modal) return;
@@ -229,16 +363,11 @@ function setupOwnerForm() {
     } else {
       $("login-form").hidden = false;
       $("editor").hidden = true;
-      setOwnerStatus(
-        "Enter the owner password to manage memories."
-      );
+      setOwnerStatus("Enter the owner password to manage memories.");
     }
   });
 
-  $("close-modal")?.addEventListener(
-    "click",
-    closeOwnerModal
-  );
+  $("close-modal")?.addEventListener("click", closeOwnerModal);
 
   document.querySelectorAll("[data-close-modal]").forEach((el) => {
     el.addEventListener("click", closeOwnerModal);
@@ -657,6 +786,7 @@ function initParticles() {
 async function startApp() {
   initParticles();
   setupOwnerForm();
+  setupMusicPlayer();
 
   setSiteVisible(false);
   makeGate();
