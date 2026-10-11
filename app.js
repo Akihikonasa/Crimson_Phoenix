@@ -34,9 +34,7 @@ async function request(action, data = {}, token = currentToken) {
   const result = await response.json().catch(() => ({}));
 
   if (!response.ok) {
-    throw new Error(
-      result.error || `Request failed (${response.status})`
-    );
+    throw new Error(result.error || `Request failed (${response.status})`);
   }
 
   return result;
@@ -55,11 +53,13 @@ function setOwnerStatus(message) {
   if (el) el.textContent = message;
 }
 
+/* FIX: Support both possible modal class names. */
 function openOwnerModal() {
   const modal = $("owner-modal");
   if (!modal) return;
 
-  modal.classList.add("is-open");
+  modal.classList.add("is-open", "open");
+  modal.style.display = "flex";
   modal.setAttribute("aria-hidden", "false");
 }
 
@@ -67,7 +67,8 @@ function closeOwnerModal() {
   const modal = $("owner-modal");
   if (!modal) return;
 
-  modal.classList.remove("is-open");
+  modal.classList.remove("is-open", "open");
+  modal.style.display = "";
   modal.setAttribute("aria-hidden", "true");
 }
 
@@ -128,7 +129,6 @@ function makeGate() {
   `;
 
   document.body.appendChild(gate);
-
   $("viewer-login-form").addEventListener("submit", viewerLogin);
 
   return gate;
@@ -162,11 +162,10 @@ async function viewerLogin(event) {
   if (button) button.disabled = true;
 
   try {
-    const result = await request(
-      "login",
-      { mode: "view", password },
-      ""
-    );
+    const result = await request("login", {
+      mode: "view",
+      password
+    }, "");
 
     if (!result.token) {
       throw new Error("The server did not return an access token.");
@@ -184,8 +183,7 @@ async function viewerLogin(event) {
     errorEl.textContent = "";
     $("viewer-password").value = "";
   } catch (error) {
-    errorEl.textContent =
-      error.message || "Could not open the archive.";
+    errorEl.textContent = error.message || "Could not open the archive.";
   } finally {
     if (button) button.disabled = false;
   }
@@ -195,29 +193,21 @@ function setupOwnerForm() {
   const form = $("login-form");
   const email = $("owner-email");
 
-  // Owner authentication uses the owner password, not an email.
   if (email) {
     email.required = false;
     email.value = "";
     email.hidden = true;
 
-    const label = document.querySelector(
-      'label[for="owner-email"]'
-    );
-
+    const label = document.querySelector('label[for="owner-email"]');
     if (label) label.hidden = true;
   }
 
   const passwordLabel = document.querySelector(
     'label[for="owner-password"]'
   );
-
-  if (passwordLabel) {
-    passwordLabel.textContent = "Owner password";
-  }
+  if (passwordLabel) passwordLabel.textContent = "Owner password";
 
   const password = $("owner-password");
-
   if (password) {
     password.autocomplete = "current-password";
     password.placeholder = "Your owner password";
@@ -259,15 +249,13 @@ async function ownerLogin(event) {
   const button = form.querySelector('button[type="submit"]');
 
   if (button) button.disabled = true;
-
   setOwnerStatus("Checking owner password…");
 
   try {
-    const result = await request(
-      "login",
-      { mode: "owner", password },
-      ""
-    );
+    const result = await request("login", {
+      mode: "owner",
+      password
+    }, "");
 
     if (!result.token) {
       throw new Error("The server did not return an access token.");
@@ -287,8 +275,6 @@ async function ownerLogin(event) {
     showMessage("Loading your memories…");
 
     setSiteVisible(true);
-
-    // Keep the owner editing panel open after login.
     openOwnerModal();
 
     await loadMemories();
@@ -314,7 +300,6 @@ function ownerLogout() {
   $("editor").hidden = true;
 
   closeOwnerModal();
-
   setSiteVisible(false);
   makeGate();
 
@@ -327,11 +312,8 @@ function normalizeMemories(rows) {
 
   rows.forEach((row, index) => {
     const numericId = Number(row.id);
-
     const targetIndex =
-      Number.isInteger(numericId) &&
-      numericId >= 1 &&
-      numericId <= 24
+      Number.isInteger(numericId) && numericId >= 1 && numericId <= 24
         ? numericId - 1
         : index;
 
@@ -339,7 +321,6 @@ function normalizeMemories(rows) {
       result[targetIndex] = {
         ...result[targetIndex],
         ...row,
-        // Keep the original storage path supplied by the gateway.
         image_path: row.image_path || null
       };
     }
@@ -350,9 +331,7 @@ function normalizeMemories(rows) {
 
 async function loadMemories() {
   const result = await request("list");
-
   memories = normalizeMemories(result.memories || []);
-
   renderGallery();
   populateMemorySelect();
 }
@@ -365,8 +344,7 @@ function renderGallery() {
 
   memories.forEach((memory, index) => {
     const panel = document.createElement("article");
-    panel.className =
-      `memory-panel${index % 2 ? " reverse" : ""}`;
+    panel.className = `memory-panel${index % 2 ? " reverse" : ""}`;
 
     const visual = document.createElement("div");
     visual.className = "memory-visual";
@@ -387,10 +365,7 @@ function renderGallery() {
     image.alt = memory.title || `Memory ${index + 1}`;
     image.loading = "lazy";
 
-    if (
-      memory.image_url &&
-      /^https?:\/\//i.test(memory.image_url)
-    ) {
+    if (memory.image_url && /^https?:\/\//i.test(memory.image_url)) {
       image.src = memory.image_url;
 
       image.addEventListener("load", () => {
@@ -407,7 +382,6 @@ function renderGallery() {
     }
 
     placeholder.hidden = Boolean(memory.image_url);
-
     imageWrap.append(image, placeholder);
     visual.append(number, imageWrap);
 
@@ -416,8 +390,7 @@ function renderGallery() {
 
     const kicker = document.createElement("p");
     kicker.className = "memory-kicker";
-    kicker.textContent =
-      `FRAGMENT ${String(index + 1).padStart(2, "0")}`;
+    kicker.textContent = `FRAGMENT ${String(index + 1).padStart(2, "0")}`;
 
     const title = document.createElement("h3");
     title.className = "memory-title";
@@ -428,8 +401,7 @@ function renderGallery() {
 
     const body = document.createElement("p");
     body.className = "memory-body";
-    body.textContent =
-      memory.body || "A space waiting for a memory to be written.";
+    body.textContent = memory.body || "A space waiting for a memory to be written.";
 
     copy.append(kicker, title, divider, body);
     panel.append(visual, copy);
@@ -439,17 +411,14 @@ function renderGallery() {
   const panels = gallery.querySelectorAll(".memory-panel");
 
   if ("IntersectionObserver" in window) {
-    const observer = new IntersectionObserver(
-      (entries) => {
-        entries.forEach((entry) => {
-          if (entry.isIntersecting) {
-            entry.target.classList.add("visible");
-            observer.unobserve(entry.target);
-          }
-        });
-      },
-      { threshold: 0.12 }
-    );
+    const observer = new IntersectionObserver((entries) => {
+      entries.forEach((entry) => {
+        if (entry.isIntersecting) {
+          entry.target.classList.add("visible");
+          observer.unobserve(entry.target);
+        }
+      });
+    }, { threshold: 0.12 });
 
     panels.forEach((panel) => observer.observe(panel));
   } else {
@@ -466,9 +435,7 @@ function populateMemorySelect() {
   memories.forEach((memory, index) => {
     const option = document.createElement("option");
     option.value = String(index);
-    option.textContent =
-      `${String(index + 1).padStart(2, "0")} — ${memory.title}`;
-
+    option.textContent = `${String(index + 1).padStart(2, "0")} — ${memory.title}`;
     select.appendChild(option);
   });
 
@@ -477,11 +444,9 @@ function populateMemorySelect() {
 
 function chooseMemory() {
   const select = $("memory-select");
-
   if (!select || !memories.length) return;
 
   selectedMemory = memories[Number(select.value)];
-
   if (!selectedMemory) return;
 
   $("memory-title").value = selectedMemory.title || "";
@@ -510,10 +475,7 @@ async function saveMemory() {
       }
 
       const allowedTypes = [
-        "image/jpeg",
-        "image/png",
-        "image/webp",
-        "image/gif"
+        "image/jpeg", "image/png", "image/webp", "image/gif"
       ];
 
       if (!allowedTypes.includes(file.type)) {
@@ -545,15 +507,10 @@ async function saveMemory() {
 
       const { error } = await storageClient.storage
         .from(BUCKET)
-        .uploadToSignedUrl(
-          prepared.path,
-          prepared.token,
-          file,
-          {
-            contentType: file.type,
-            upsert: true
-          }
-        );
+        .uploadToSignedUrl(prepared.path, prepared.token, file, {
+          contentType: file.type,
+          upsert: true
+        });
 
       if (error) throw error;
 
@@ -568,9 +525,6 @@ async function saveMemory() {
     });
 
     const savedId = selectedMemory.id;
-
-    showMessage("Memory saved successfully.");
-
     await loadMemories();
 
     const updatedIndex = memories.findIndex(
@@ -580,13 +534,11 @@ async function saveMemory() {
     if (updatedIndex >= 0) {
       $("memory-select").value = String(updatedIndex);
       chooseMemory();
-      showMessage("Memory saved successfully.");
     }
+
+    showMessage("Memory saved successfully.");
   } catch (error) {
-    showMessage(
-      error.message || "Could not save this memory.",
-      true
-    );
+    showMessage(error.message || "Could not save this memory.", true);
   } finally {
     saveButton.disabled = false;
   }
@@ -602,14 +554,9 @@ async function removeImage() {
   button.disabled = true;
 
   try {
-    await request("remove_image", {
-      id: selectedMemory.id
-    });
-
     const removedId = selectedMemory.id;
 
-    showMessage("Photo removed from this memory.");
-
+    await request("remove_image", { id: removedId });
     await loadMemories();
 
     const updatedIndex = memories.findIndex(
@@ -619,13 +566,11 @@ async function removeImage() {
     if (updatedIndex >= 0) {
       $("memory-select").value = String(updatedIndex);
       chooseMemory();
-      showMessage("Photo removed from this memory.");
     }
+
+    showMessage("Photo removed from this memory.");
   } catch (error) {
-    showMessage(
-      error.message || "Could not remove the photo.",
-      true
-    );
+    showMessage(error.message || "Could not remove the photo.", true);
   } finally {
     button.disabled = false;
   }
@@ -643,13 +588,10 @@ function initParticles() {
 
   function resize() {
     const ratio = window.devicePixelRatio || 1;
-
     canvas.width = window.innerWidth * ratio;
     canvas.height = window.innerHeight * ratio;
-
     canvas.style.width = `${window.innerWidth}px`;
     canvas.style.height = `${window.innerHeight}px`;
-
     ctx.setTransform(ratio, 0, 0, ratio, 0, 0);
   }
 
@@ -663,9 +605,7 @@ function initParticles() {
     };
   }
 
-  for (let i = 0; i < 55; i++) {
-    particles.push(createParticle());
-  }
+  for (let i = 0; i < 55; i++) particles.push(createParticle());
 
   function draw() {
     ctx.clearRect(0, 0, window.innerWidth, window.innerHeight);
@@ -679,14 +619,7 @@ function initParticles() {
       }
 
       ctx.beginPath();
-      ctx.arc(
-        particle.x,
-        particle.y,
-        particle.radius,
-        0,
-        Math.PI * 2
-      );
-
+      ctx.arc(particle.x, particle.y, particle.radius, 0, Math.PI * 2);
       ctx.fillStyle = `rgba(205,166,255,${particle.alpha})`;
       ctx.fill();
     });
@@ -705,7 +638,6 @@ function initParticles() {
 
   resize();
   start();
-
   window.addEventListener("resize", resize);
 
   document.addEventListener("visibilitychange", () => {
@@ -736,7 +668,6 @@ async function startApp() {
       currentRole = session.role;
 
       await loadMemories();
-
       setSiteVisible(true);
 
       if (currentRole === "owner") {
