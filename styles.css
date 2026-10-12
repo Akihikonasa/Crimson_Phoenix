@@ -479,8 +479,7 @@ main,
   padding: 18px;
 }
 
-.modal.open,
-.modal.is-open {
+.modal.open {
   display: flex;
 }
 
@@ -573,13 +572,6 @@ main,
 
 .primary-button:hover {
   filter: brightness(1.15);
-}
-
-.primary-button:disabled,
-.secondary-button:disabled,
-button:disabled {
-  opacity: 0.6;
-  cursor: wait;
 }
 
 .secondary-button {
@@ -1015,7 +1007,6 @@ button:disabled {
   inset: 0;
   overflow: hidden;
   z-index: -1;
-  transform-origin: 50% 50%;
   background-image:
     radial-gradient(1px 1px at 8% 20%, #fff 50%, transparent 100%),
     radial-gradient(2px 2px at 18% 70%, #e7d0ff 50%, transparent 100%),
@@ -1317,12 +1308,8 @@ button:disabled {
   transform-origin: left center;
 }
 
-/*
-  app.js controls the intro duration:
-  18.1 seconds active + 0.9 seconds fade = 19 seconds total.
-*/
-.afterglow-intro.is-active .intro-progress span {
-  animation: intro-progress-fill 18.1s linear forwards;
+.is-active .intro-progress span {
+  animation: intro-progress-fill 11.9s linear forwards;
 }
 
 @keyframes intro-progress-fill {
@@ -1336,30 +1323,6 @@ button:disabled {
     opacity: 1;
     transform: translateY(0);
   }
-}
-
-/* Sparks spawned dynamically by app.js */
-
-#afterglow-intro .intro-burst-spark {
-  position: absolute;
-  left: 50%;
-  top: 44%;
-  z-index: 4;
-  display: block;
-  pointer-events: none;
-  color: #f7eaff;
-  line-height: 1;
-  will-change: transform, opacity, filter;
-  text-shadow:
-    0 0 7px #f3dfff,
-    0 0 18px #c18aff,
-    0 0 32px #a45cff;
-}
-
-#afterglow-intro .intro-core,
-#afterglow-intro .intro-orbit,
-#afterglow-intro .intro-star {
-  will-change: transform;
 }
 
 @media (max-width: 480px) {
@@ -1381,8 +1344,6 @@ button:disabled {
   }
 }
 
-/* Accessibility */
-
 @media (prefers-reduced-motion: reduce) {
   *,
   *::before,
@@ -1390,9 +1351,5 @@ button:disabled {
     scroll-behavior: auto !important;
     animation-duration: 0.01ms !important;
     transition-duration: 0.01ms !important;
-  }
-
-  #afterglow-intro .intro-burst-spark {
-    display: none !important;
   }
   }
