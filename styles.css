@@ -1381,3 +1381,4 @@ main,
     box-shadow: 0 0 22px rgba(194, 130, 255, 0.65);
   }
 }
+const introTask = startAfterglowIntro();
