@@ -28,13 +28,16 @@ let musicControlsOpen = false;
    ========================================= */
 
 let introPromise = null;
+let introHasPlayed = false;
 
 function startAfterglowIntro() {
   const intro = $("afterglow-intro");
   const audio = $("afterglow-intro-music");
 
-  if (!intro) return Promise.resolve();
+  if (!intro || introHasPlayed) return Promise.resolve();
   if (introPromise) return introPromise;
+
+  introHasPlayed = true;
 
   introPromise = new Promise((resolve) => {
     let finished = false;
@@ -47,23 +50,75 @@ function startAfterglowIntro() {
     musicButton.hidden = true;
 
     const copy = intro.querySelector(".intro-copy");
-    if (copy && audio) {
-      copy.appendChild(musicButton);
-    }
+    if (copy && audio) copy.appendChild(musicButton);
 
     function tryPlayMusic() {
       if (!audio) return;
 
-      const result = audio.play();
+      const playAttempt = audio.play();
 
-      if (result && typeof result.then === "function") {
-        result.then(() => {
-          musicButton.hidden = true;
-        }).catch(() => {
-          musicButton.hidden = false;
-        });
+      if (playAttempt && typeof playAttempt.then === "function") {
+        playAttempt
+          .then(() => {
+            musicButton.hidden = true;
+          })
+          .catch(() => {
+            musicButton.hidden = false;
+          });
       }
     }
+
+    musicButton.addEventListener("click", tryPlayMusic);
+
+    function finishIntro() {
+      if (finished) return;
+      finished = true;
+      clearTimeout(finishTimer);
+
+      intro.classList.add("is-leaving");
+
+      if (audio) {
+        audio.pause();
+        try {
+          audio.currentTime = 0;
+        } catch (_) {}
+      }
+
+      musicButton.remove();
+
+      window.setTimeout(() => {
+        intro.hidden = true;
+        intro.setAttribute("aria-hidden", "true");
+        intro.classList.remove("is-active", "is-leaving");
+        resolve();
+      }, 900);
+    }
+
+    // Cover the page before showing the animation.
+    intro.hidden = false;
+    intro.setAttribute("aria-hidden", "false");
+    intro.classList.remove("is-active", "is-leaving");
+
+    // Force the browser to register the hidden initial state.
+    void intro.offsetWidth;
+
+    requestAnimationFrame(() => {
+      intro.classList.add("is-active");
+    });
+
+    if (audio) {
+      audio.pause();
+      audio.currentTime = 0;
+      audio.volume = 0.65;
+      tryPlayMusic();
+    }
+
+    finishTimer = window.setTimeout(finishIntro, 12100);
+  });
+
+  return introPromise;
+}
+
 
     musicButton.addEventListener("click", tryPlayMusic);
 
