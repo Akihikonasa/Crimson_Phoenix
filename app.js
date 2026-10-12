@@ -24,7 +24,104 @@ let currentSongIndex = 0;
 let musicControlsOpen = false;
 
 /* =========================================
-   MUSIC PLAYER
+   DREAMY GALAXY INTRO
+   ========================================= */
+
+let introPromise = null;
+
+function startAfterglowIntro() {
+  const intro = $("afterglow-intro");
+  const audio = $("afterglow-intro-music");
+
+  // If the intro markup isn't present, continue normally.
+  if (!intro) return Promise.resolve();
+
+  // Prevent two intros from playing at the same time.
+  if (introPromise) return introPromise;
+
+  introPromise = new Promise((resolve) => {
+    let finished = false;
+    let finishTimer = null;
+
+    // The fade-out takes approximately 900ms.
+    // 12.1 seconds + 0.9 seconds = approximately 13 seconds.
+    const INTRO_DURATION = 12100;
+    const FADE_DURATION = 900;
+
+    function finishIntro() {
+      if (finished) return;
+      finished = true;
+
+      if (finishTimer) {
+        window.clearTimeout(finishTimer);
+      }
+
+      intro.classList.add("is-leaving");
+
+      if (audio) {
+        audio.pause();
+
+        try {
+          audio.currentTime = 0;
+        } catch (error) {
+          // Some browsers may not allow seeking immediately.
+        }
+      }
+
+      window.setTimeout(() => {
+        intro.hidden = true;
+        intro.classList.remove("is-active", "is-leaving");
+        intro.setAttribute("aria-hidden", "true");
+
+        introPromise = null;
+        resolve();
+      }, FADE_DURATION);
+    }
+
+    // Show the intro above the already-loaded gallery.
+    intro.hidden = false;
+    intro.setAttribute("aria-hidden", "false");
+
+    // Force the browser to register the initial hidden state.
+    void intro.offsetWidth;
+
+    requestAnimationFrame(() => {
+      intro.classList.add("is-active");
+    });
+
+    // Start the intro music after the visitor submits the password.
+    if (audio) {
+      audio.pause();
+
+      try {
+        audio.currentTime = 0;
+      } catch (error) {
+        // Continue even if the browser cannot reset the audio.
+      }
+
+      audio.volume = 0.65;
+
+      const playPromise = audio.play();
+
+      if (playPromise && typeof playPromise.catch === "function") {
+        playPromise.catch(() => {
+          // The visual intro still runs if autoplay is blocked
+          // or the MP3 file cannot be loaded.
+        });
+      }
+    }
+
+    finishTimer = window.setTimeout(
+      finishIntro,
+      INTRO_DURATION
+    );
+  });
+
+  return introPromise;
+}
+
+/* =========================================
+   MUSIC PLAYER — EXISTING PLAYER PRESERVED
    ========================================= */
 
 function setupMusicPlayer() {
@@ -54,8 +151,6 @@ function setupMusicPlayer() {
     );
 
     toggle.classList.toggle("is-playing", playing);
-
-    // Keep the crescent moon visible during playback.
   }
 
   function loadSong(index, autoplay = false) {
@@ -154,7 +249,7 @@ function setupMusicPlayer() {
   loadSong(0, false);
   updatePlaybackUI();
 
-  // Browsers may block autoplay until the visitor interacts.
+  // Existing music player behavior is preserved.
   playMusic();
 }
 
@@ -263,14 +358,12 @@ function setupDraggableMusicButton() {
       sparkle.remove();
     }, { once: true });
 
-    // Fallback cleanup if animations are disabled.
     window.setTimeout(() => sparkle.remove(), 900);
   }
 
   function createSparkleTrail(x, y) {
     const now = performance.now();
 
-    // Prevent too many particles on fast movements.
     if (now - lastSparkleTime < 45) return;
 
     lastSparkleTime = now;
@@ -305,7 +398,6 @@ function setupDraggableMusicButton() {
     originX = rect.left;
     originY = rect.top;
 
-    // Switch from right/bottom positioning to left/top positioning.
     player.style.left = originX + "px";
     player.style.top = originY + "px";
     player.style.right = "auto";
@@ -342,11 +434,7 @@ function setupDraggableMusicButton() {
     player.style.left = position.x + "px";
     player.style.top = position.y + "px";
 
-    // Create a sparkling trail behind the moving moon.
-    createSparkleTrail(
-      event.clientX,
-      event.clientY
-    );
+    createSparkleTrail(event.clientX, event.clientY);
   });
 
   function finishDrag() {
@@ -364,7 +452,6 @@ function setupDraggableMusicButton() {
   button.addEventListener("pointerup", finishDrag);
   button.addEventListener("pointercancel", finishDrag);
 
-  // A drag must not accidentally open or close the music controls.
   button.addEventListener("click", (event) => {
     if (!suppressClick) return;
 
@@ -374,7 +461,6 @@ function setupDraggableMusicButton() {
     suppressClick = false;
   }, true);
 
-  // Keep the moon visible after screen rotation or resizing.
   window.addEventListener("resize", () => {
     const rect = player.getBoundingClientRect();
 
@@ -531,6 +617,10 @@ function setSiteVisible(visible) {
   }
 }
 
+/* =========================================
+   VIEWER LOGIN + INTRO
+   ========================================= */
+
 async function viewerLogin(event) {
   event.preventDefault();
 
@@ -559,13 +649,22 @@ async function viewerLogin(event) {
     sessionStorage.setItem("afterglow_view_token", currentToken);
     sessionStorage.removeItem("afterglow_owner_token");
 
+    // Load the gallery before showing the intro.
     await loadMemories();
 
-    setSiteVisible(true);
     errorEl.textContent = "";
     $("viewer-password").value = "";
+
+    // Hide the password gate and reveal the gallery underneath.
+    // The intro covers the gallery while it plays.
+    setSiteVisible(true);
+
+    // Only manual successful viewer login triggers the intro.
+    await startAfterglowIntro();
+
   } catch (error) {
-    errorEl.textContent = error.message || "Could not open the archive.";
+    errorEl.textContent =
+      error.message || "Could not open the archive.";
   } finally {
     if (button) button.disabled = false;
   }
@@ -759,7 +858,8 @@ function renderGallery() {
     image.className = "memory-image";
     image.alt = memory.title || `Memory ${index + 1}`;
     image.loading = "eager";
-image.decoding = "async";
+    image.decoding = "async";
+
     if (memory.image_url && /^https?:\/\//i.test(memory.image_url)) {
       image.src = memory.image_url;
 
@@ -1077,7 +1177,7 @@ async function startApp() {
   initParticles();
   setupOwnerForm();
 
-  // Initialize music and the draggable crescent moon.
+  // Keep the existing floating music player and moon.
   setupMusicPlayer();
   setupDraggableMusicButton();
 
@@ -1100,6 +1200,8 @@ async function startApp() {
       currentRole = session.role;
 
       await loadMemories();
+
+      // Restoring an existing session does NOT play the intro.
       setSiteVisible(true);
 
       if (currentRole === "owner") {
