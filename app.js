@@ -33,88 +33,92 @@ function startAfterglowIntro() {
   const intro = $("afterglow-intro");
   const audio = $("afterglow-intro-music");
 
-  // If the intro markup isn't present, continue normally.
   if (!intro) return Promise.resolve();
-
-  // Prevent two intros from playing at the same time.
   if (introPromise) return introPromise;
 
   introPromise = new Promise((resolve) => {
     let finished = false;
-    let finishTimer = null;
+    let finishTimer;
 
-    // The fade-out takes approximately 900ms.
-    // 12.1 seconds + 0.9 seconds = approximately 13 seconds.
-    const INTRO_DURATION = 12100;
-    const FADE_DURATION = 900;
+    const musicButton = document.createElement("button");
+    musicButton.type = "button";
+    musicButton.className = "intro-music-enable";
+    musicButton.textContent = "♫ Tap to enable music";
+    musicButton.hidden = true;
+
+    const copy = intro.querySelector(".intro-copy");
+    if (copy && audio) {
+      copy.appendChild(musicButton);
+    }
+
+    function tryPlayMusic() {
+      if (!audio) return;
+
+      const result = audio.play();
+
+      if (result && typeof result.then === "function") {
+        result.then(() => {
+          musicButton.hidden = true;
+        }).catch(() => {
+          musicButton.hidden = false;
+        });
+      }
+    }
+
+    musicButton.addEventListener("click", tryPlayMusic);
 
     function finishIntro() {
       if (finished) return;
       finished = true;
 
-      if (finishTimer) {
-        window.clearTimeout(finishTimer);
-      }
-
+      clearTimeout(finishTimer);
       intro.classList.add("is-leaving");
 
       if (audio) {
         audio.pause();
-
         try {
           audio.currentTime = 0;
-        } catch (error) {
-          // Some browsers may not allow seeking immediately.
-        }
+        } catch (_) {}
       }
+
+      musicButton.remove();
 
       window.setTimeout(() => {
         intro.hidden = true;
-        intro.classList.remove("is-active", "is-leaving");
         intro.setAttribute("aria-hidden", "true");
+        intro.classList.remove("is-active", "is-leaving");
 
         introPromise = null;
         resolve();
-      }, FADE_DURATION);
+      }, 900);
     }
 
-    // Show the intro above the already-loaded gallery.
+    // Reveal the intro before starting its transition.
     intro.hidden = false;
     intro.setAttribute("aria-hidden", "false");
+    intro.classList.remove("is-active", "is-leaving");
 
-    // Force the browser to register the initial hidden state.
+    // Force the browser to register the initial state.
     void intro.offsetWidth;
 
     requestAnimationFrame(() => {
-      intro.classList.add("is-active");
+      if (!finished) {
+        intro.classList.add("is-active");
+      }
     });
 
-    // Start the intro music after the visitor submits the password.
+    // Attempt music playback immediately.
     if (audio) {
-      audio.pause();
-
       try {
+        audio.volume = 0.65;
         audio.currentTime = 0;
-      } catch (error) {
-        // Continue even if the browser cannot reset the audio.
-      }
+      } catch (_) {}
 
-      audio.volume = 0.65;
-
-      const playPromise = audio.play();
-
-      if (playPromise && typeof playPromise.catch === "function") {
-        playPromise.catch(() => {
-          // The visual intro still runs if autoplay is blocked
-          // or the MP3 file cannot be loaded.
-        });
-      }
+      tryPlayMusic();
     }
 
-    finishTimer = window.setTimeout(
-      finishIntro,
-      INTRO_DURATION
-    );
+    // About 13 seconds including the fade-out.
+    finishTimer = window.setTimeout(finishIntro, 12100);
   });
 
   return introPromise;
