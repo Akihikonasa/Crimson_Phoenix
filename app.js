@@ -27,7 +27,7 @@ let musicControlsOpen = false;
 DREAMY GALAXY INTRO
 ========================================= */
 
-introPromise = null;
+let introPromise = null;
 
 function startAfterglowIntro() {
 const intro = $("afterglow-intro");
