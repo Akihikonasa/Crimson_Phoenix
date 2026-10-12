@@ -28,6 +28,7 @@ let musicControlsOpen = false;
    ========================================= */
 
 let introPromise = null;
+let introPlayed = false;
 
 function startAfterglowIntro() {
   const intro = $("afterglow-intro");
@@ -37,7 +38,10 @@ function startAfterglowIntro() {
   if (!intro) return Promise.resolve();
 
   // Prevent two intros from playing at the same time.
-  if (introPromise) return introPromise;
+  if (introPlayed) return Promise.resolve();
+if (introPromise) return introPromise;
+
+introPlayed = true;
 
   introPromise = new Promise((resolve) => {
     let finished = false;
