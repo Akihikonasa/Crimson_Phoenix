@@ -28,64 +28,33 @@ let musicControlsOpen = false;
    ========================================= */
 
 let introPromise = null;
-let introHasPlayed = false;
 
 function startAfterglowIntro() {
   const intro = $("afterglow-intro");
   const audio = $("afterglow-intro-music");
 
-  if (!intro || introHasPlayed) {
-    return Promise.resolve();
-  }
+  // If the intro markup isn't present, continue normally.
+  if (!intro) return Promise.resolve();
 
+  // Prevent two intros from playing at the same time.
   if (introPromise) return introPromise;
-
-  // Prevent duplicate playback during this page session.
-  introHasPlayed = true;
 
   introPromise = new Promise((resolve) => {
     let finished = false;
-    let finishTimer;
-    let fadeTimer;
+    let finishTimer = null;
 
-    const musicButton = document.createElement("button");
-    musicButton.type = "button";
-    musicButton.className = "intro-music-enable";
-    musicButton.textContent = "♫ Tap to enable music";
-    musicButton.hidden = true;
-
-    const copy = intro.querySelector(".intro-copy");
-
-    if (copy && audio) {
-      copy.appendChild(musicButton);
-    }
-
-    function tryPlayMusic() {
-      if (!audio) return;
-
-      try {
-        const attempt = audio.play();
-
-        if (attempt && typeof attempt.then === "function") {
-          attempt.then(() => {
-            musicButton.hidden = true;
-          }).catch(() => {
-            // Mobile browsers may block automatic playback.
-            musicButton.hidden = false;
-          });
-        }
-      } catch (_) {
-        musicButton.hidden = false;
-      }
-    }
-
-    musicButton.addEventListener("click", tryPlayMusic);
+    // The fade-out takes approximately 900ms.
+    // 12.1 seconds + 0.9 seconds = approximately 13 seconds.
+    const INTRO_DURATION = 12100;
+    const FADE_DURATION = 900;
 
     function finishIntro() {
       if (finished) return;
       finished = true;
 
-      window.clearTimeout(finishTimer);
+      if (finishTimer) {
+        window.clearTimeout(finishTimer);
+      }
 
       intro.classList.add("is-leaving");
 
@@ -94,52 +63,65 @@ function startAfterglowIntro() {
 
         try {
           audio.currentTime = 0;
-        } catch (_) {}
+        } catch (error) {
+          // Some browsers may not allow seeking immediately.
+        }
       }
 
-      musicButton.remove();
-
-      fadeTimer = window.setTimeout(() => {
+      window.setTimeout(() => {
         intro.hidden = true;
-        intro.setAttribute("aria-hidden", "true");
         intro.classList.remove("is-active", "is-leaving");
+        intro.setAttribute("aria-hidden", "true");
 
         introPromise = null;
         resolve();
-      }, 900);
+      }, FADE_DURATION);
     }
 
-    // Display the overlay before revealing the gallery.
+    // Show the intro above the already-loaded gallery.
     intro.hidden = false;
     intro.setAttribute("aria-hidden", "false");
-    intro.classList.remove("is-active", "is-leaving");
 
-    // Register the initial state for the CSS transition.
+    // Force the browser to register the initial hidden state.
     void intro.offsetWidth;
 
-    // Activate synchronously to avoid a delayed second animation.
-    intro.classList.add("is-active");
+    requestAnimationFrame(() => {
+      intro.classList.add("is-active");
+    });
 
+    // Start the intro music after the visitor submits the password.
     if (audio) {
       audio.pause();
 
       try {
         audio.currentTime = 0;
-        audio.volume = 0.65;
-      } catch (_) {}
+      } catch (error) {
+        // Continue even if the browser cannot reset the audio.
+      }
 
-      tryPlayMusic();
+      audio.volume = 0.65;
+
+      const playPromise = audio.play();
+
+      if (playPromise && typeof playPromise.catch === "function") {
+        playPromise.catch(() => {
+          // The visual intro still runs if autoplay is blocked
+          // or the MP3 file cannot be loaded.
+        });
+      }
     }
 
-    // Approximately 12 seconds plus the 900 ms fade-out.
-    finishTimer = window.setTimeout(finishIntro, 12100);
+    finishTimer = window.setTimeout(
+      finishIntro,
+      INTRO_DURATION
+    );
   });
 
   return introPromise;
 }
 
 /* =========================================
-   EXISTING MUSIC PLAYER
+   MUSIC PLAYER — EXISTING PLAYER PRESERVED
    ========================================= */
 
 function setupMusicPlayer() {
@@ -186,7 +168,9 @@ function setupMusicPlayer() {
     audio.load();
 
     if (autoplay) {
-      audio.play().catch(updatePlaybackUI);
+      audio.play().catch(() => {
+        updatePlaybackUI();
+      });
     }
   }
 
@@ -194,7 +178,7 @@ function setupMusicPlayer() {
     try {
       if (!audio.src) loadSong(currentSongIndex, false);
       await audio.play();
-    } catch (_) {
+    } catch (error) {
       console.info("Tap the music button to start playback.");
     }
 
@@ -212,9 +196,12 @@ function setupMusicPlayer() {
     if (details) details.hidden = !musicControlsOpen;
 
     toggle.setAttribute("aria-expanded", String(musicControlsOpen));
+
     toggle.setAttribute(
       "aria-label",
-      musicControlsOpen ? "Close music controls" : "Open music controls"
+      musicControlsOpen
+        ? "Close music controls"
+        : "Open music controls"
     );
 
     if (musicControlsOpen && audio.paused) {
@@ -253,14 +240,16 @@ function setupMusicPlayer() {
   });
 
   audio.addEventListener("error", () => {
-    console.warn("Could not load the music file. Check its URL.");
+    console.warn(
+      "Could not load the music file. Check the MP3 filename and repository path."
+    );
     updatePlaybackUI();
   });
 
   loadSong(0, false);
   updatePlaybackUI();
 
-  // Preserve the original floating player behavior.
+  // Existing music player behavior is preserved.
   playMusic();
 }
 
@@ -316,7 +305,7 @@ function setupDraggableMusicButton() {
           y: player.offsetTop
         })
       );
-    } catch (_) {
+    } catch (error) {
       console.info("Could not save the moon position.");
     }
   }
@@ -339,7 +328,9 @@ function setupDraggableMusicButton() {
       player.style.top = position.y + "px";
       player.style.right = "auto";
       player.style.bottom = "auto";
-    } catch (_) {}
+    } catch (error) {
+      // Keep the default bottom-right position.
+    }
   }
 
   function createSparkle(x, y) {
@@ -350,22 +341,22 @@ function setupDraggableMusicButton() {
 
     sparkle.style.left = x + "px";
     sparkle.style.top = y + "px";
+
     sparkle.style.setProperty(
       "--sparkle-x",
-      Math.random() * 34 - 17 + "px"
+      (Math.random() * 34 - 17) + "px"
     );
+
     sparkle.style.setProperty(
       "--sparkle-y",
-      Math.random() * 34 - 17 + "px"
+      (Math.random() * 34 - 17) + "px"
     );
 
     document.body.appendChild(sparkle);
 
-    sparkle.addEventListener(
-      "animationend",
-      () => sparkle.remove(),
-      { once: true }
-    );
+    sparkle.addEventListener("animationend", () => {
+      sparkle.remove();
+    }, { once: true });
 
     window.setTimeout(() => sparkle.remove(), 900);
   }
@@ -374,6 +365,7 @@ function setupDraggableMusicButton() {
     const now = performance.now();
 
     if (now - lastSparkleTime < 45) return;
+
     lastSparkleTime = now;
 
     createSparkle(
@@ -415,7 +407,9 @@ function setupDraggableMusicButton() {
 
     try {
       button.setPointerCapture(event.pointerId);
-    } catch (_) {}
+    } catch (error) {
+      // Pointer capture may not be available.
+    }
 
     event.preventDefault();
   });
@@ -432,7 +426,10 @@ function setupDraggableMusicButton() {
 
     if (!moved) return;
 
-    const position = keepOnScreen(originX + dx, originY + dy);
+    const position = keepOnScreen(
+      originX + dx,
+      originY + dy
+    );
 
     player.style.left = position.x + "px";
     player.style.top = position.y + "px";
@@ -466,7 +463,11 @@ function setupDraggableMusicButton() {
 
   window.addEventListener("resize", () => {
     const rect = player.getBoundingClientRect();
-    const position = keepOnScreen(rect.left, rect.top);
+
+    const position = keepOnScreen(
+      rect.left,
+      rect.top
+    );
 
     player.style.left = position.x + "px";
     player.style.top = position.y + "px";
@@ -478,7 +479,7 @@ function setupDraggableMusicButton() {
 }
 
 /* =========================================
-   MEMORY DATA + GATEWAY
+   MEMORY DATA
    ========================================= */
 
 const defaultMemories = Array.from({ length: 24 }, (_, i) => ({
@@ -633,11 +634,10 @@ async function viewerLogin(event) {
   if (button) button.disabled = true;
 
   try {
-    const result = await request(
-      "login",
-      { mode: "view", password },
-      ""
-    );
+    const result = await request("login", {
+      mode: "view",
+      password
+    }, "");
 
     if (!result.token) {
       throw new Error("The server did not return an access token.");
@@ -649,16 +649,19 @@ async function viewerLogin(event) {
     sessionStorage.setItem("afterglow_view_token", currentToken);
     sessionStorage.removeItem("afterglow_owner_token");
 
+    // Load the gallery before showing the intro.
+    await loadMemories();
+
     errorEl.textContent = "";
     $("viewer-password").value = "";
 
-    // Start the overlay before revealing the gallery.
-    const introTask = startAfterglowIntro();
+    // Hide the password gate and reveal the gallery underneath.
+    // The intro covers the gallery while it plays.
     setSiteVisible(true);
 
-    // Load memories while the intro is playing.
-    await loadMemories();
-    await introTask;
+    // Only manual successful viewer login triggers the intro.
+    await startAfterglowIntro();
+
   } catch (error) {
     errorEl.textContent =
       error.message || "Could not open the archive.";
@@ -738,7 +741,10 @@ async function ownerLogin(event) {
   setOwnerStatus("Checking owner password…");
 
   try {
-    const result = await request("login", { mode: "owner", password }, "");
+    const result = await request("login", {
+      mode: "owner",
+      password
+    }, "");
 
     if (!result.token) {
       throw new Error("The server did not return an access token.");
@@ -879,7 +885,8 @@ function renderGallery() {
 
     const kicker = document.createElement("p");
     kicker.className = "memory-kicker";
-    kicker.textContent = `FRAGMENT ${String(index + 1).padStart(2, "0")}`;
+    kicker.textContent =
+      `FRAGMENT ${String(index + 1).padStart(2, "0")}`;
 
     const title = document.createElement("h3");
     title.className = "memory-title";
@@ -1127,6 +1134,7 @@ function initParticles() {
       }
 
       ctx.beginPath();
+
       ctx.arc(
         particle.x,
         particle.y,
@@ -1166,18 +1174,15 @@ function initParticles() {
    ========================================= */
 
 async function startApp() {
-  // Hide the page before initializing any components.
-  setSiteVisible(false);
-  makeGate();
-
-  // Release the early CSS initialization hide only after
-  // the page and password gate have been initialized.
-  document.documentElement.classList.add("afterglow-ready");
-
   initParticles();
   setupOwnerForm();
+
+  // Keep the existing floating music player and moon.
   setupMusicPlayer();
   setupDraggableMusicButton();
+
+  setSiteVisible(false);
+  makeGate();
 
   const ownerToken = sessionStorage.getItem("afterglow_owner_token");
   const viewToken = sessionStorage.getItem("afterglow_view_token");
@@ -1196,7 +1201,7 @@ async function startApp() {
 
       await loadMemories();
 
-      // Existing sessions restore without playing the intro.
+      // Restoring an existing session does NOT play the intro.
       setSiteVisible(true);
 
       if (currentRole === "owner") {
@@ -1224,3 +1229,4 @@ async function startApp() {
 }
 
 document.addEventListener("DOMContentLoaded", startApp);
+document.documentElement.classList.add("afterglow-ready");
