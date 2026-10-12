@@ -13,9 +13,11 @@ let currentRole = "";
 let selectedMemory = null;
 let storageClient = null;
 
-/* MUSIC PLAYLIST */
 const MUSIC_PLAYLIST = [
-  { title: "Dreamy Night", src: "./dreamy-night.mp3" }
+  {
+    title: "Dreamy Night",
+    src: "https://akihikonasa.github.io/Crimson_Phoenix/dreamy-night.mp3"
+  }
 ];
 
 let currentSongIndex = 0;
