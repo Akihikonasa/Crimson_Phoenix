@@ -756,8 +756,8 @@ function renderGallery() {
     const image = document.createElement("img");
     image.className = "memory-image";
     image.alt = memory.title || `Memory ${index + 1}`;
-    image.loading = "lazy";
-
+    image.loading = index < 2 ? "eager" : "lazy";
+image.decoding = "async";
     if (memory.image_url && /^https?:\/\//i.test(memory.image_url)) {
       image.src = memory.image_url;
 
