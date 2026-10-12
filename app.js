@@ -654,10 +654,16 @@ async function viewerLogin(event) {
     sessionStorage.removeItem("afterglow_owner_token");
 
     // Load the gallery before showing the intro.
-    await loadMemories();
+    // Reveal the page underneath the intro.
+setSiteVisible(true);
+errorEl.textContent = "";
+$("viewer-password").value = "";
 
-    errorEl.textContent = "";
-    $("viewer-password").value = "";
+// Start the intro immediately instead of waiting for photos to load.
+const introTask = startAfterglowIntro();
+
+await loadMemories();
+await introTask;
 
     // Hide the password gate and reveal the gallery underneath.
     // The intro covers the gallery while it plays.
