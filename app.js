@@ -1,8 +1,8 @@
 const CONFIG = window.AFTERGLOW_CONFIG;
 
 const GATEWAY =
-  CONFIG?.gatewayUrl ||
-  "https://wttkmkrzdkeqidjxllrs.supabase.co/functions/v1/afterglow-gateway-v2";
+CONFIG?.gatewayUrl ||
+"https://wttkmkrzdkeqidjxllrs.supabase.co/functions/v1/afterglow-gateway-v2";
 
 const BUCKET = CONFIG?.bucketName || "afterglow";
 const $ = (id) => document.getElementById(id);
@@ -14,1558 +14,1246 @@ let selectedMemory = null;
 let storageClient = null;
 
 const MUSIC_PLAYLIST = [
-  {
-    title: "Dreamy Night",
-    src: "https://akihikonasa.github.io/Crimson_Phoenix/dreamy-night.mp3"
-  }
+{
+title: "Dreamy Night",
+src: "https://akihikonasa.github.io/Crimson_Phoenix/dreamy-night.mp3"
+}
 ];
 
 let currentSongIndex = 0;
 let musicControlsOpen = false;
 
 /* =========================================
-   DREAMY GALAXY INTRO — 19 SECONDS
-   Original circle design preserved.
-   Additional sparkle bursts integrated.
-   ========================================= */
+DREAMY GALAXY INTRO
+========================================= */
 
 let introPromise = null;
 
 function startAfterglowIntro() {
-  const intro = $("afterglow-intro");
-  const audio = $("afterglow-intro-music");
+const intro = $("afterglow-intro");
+const audio = $("afterglow-intro-music");
 
-  if (!intro) return Promise.resolve();
-  if (introPromise) return introPromise;
+// If the intro markup isn't present, continue normally.
+if (!intro) return Promise.resolve();
 
-  // 18.1 seconds playing + 0.9 seconds fading = 19 seconds.
-  const INTRO_DURATION = 18100;
-  const FADE_DURATION = 900;
+// Prevent two intros from playing at the same time.
+if (introPromise) return introPromise;
 
-  // Install extra sparkle styling automatically.
-  if (!$("afterglow-extra-sparkle-style")) {
-    const style = document.createElement("style");
-    style.id = "afterglow-extra-sparkle-style";
+introPromise = new Promise((resolve) => {
+let finished = false;
+let finishTimer = null;
 
-    style.textContent = `
-      .intro-burst-spark {
-        position: absolute;
-        left: 50%;
-        top: 50%;
-        width: var(--spark-size, 3px);
-        height: var(--spark-size, 3px);
-        border-radius: 50%;
-        background: #fff;
-        pointer-events: none;
-        z-index: 5;
-        opacity: 0;
-        box-shadow:
-          0 0 6px 2px rgba(255,255,255,.9),
-          0 0 14px 4px rgba(190,120,255,.85);
-        animation: afterglow-spark-burst
-          var(--spark-duration, 900ms)
-          cubic-bezier(.12,.7,.25,1) forwards;
-      }
+// The fade-out takes approximately 900ms.  
+// 12.1 seconds + 0.9 seconds = approximately 13 seconds.  
+const INTRO_DURATION = 12100;  
+const FADE_DURATION = 900;  
 
-      @keyframes afterglow-spark-burst {
-        0% {
-          opacity: 0;
-          transform: translate(-50%, -50%) scale(.3);
-        }
+function finishIntro() {  
+  if (finished) return;  
+  finished = true;  
 
-        12% {
-          opacity: 1;
-        }
+  if (finishTimer) {  
+    window.clearTimeout(finishTimer);  
+  }  
 
-        100% {
-          opacity: 0;
-          transform:
-            translate(
-              calc(-50% + var(--spark-x)),
-              calc(-50% + var(--spark-y))
-            )
-            scale(.15);
-        }
-      }
+  intro.classList.add("is-leaving");  
 
-      @media (prefers-reduced-motion: reduce) {
-        .intro-burst-spark {
-          animation-duration: 400ms;
-        }
-      }
-    `;
+  if (audio) {  
+    audio.pause();  
 
-    document.head.appendChild(style);
-  }
+    try {  
+      audio.currentTime = 0;  
+    } catch (error) {  
+      // Some browsers may not allow seeking immediately.  
+    }  
+  }  
 
-  introPromise = new Promise((resolve) => {
-    let finished = false;
-    let finishTimer = null;
+  window.setTimeout(() => {  
+    intro.hidden = true;  
+    intro.classList.remove("is-active", "is-leaving");  
+    intro.setAttribute("aria-hidden", "true");  
 
-    const sparkleTimers = [];
-    const sparkleElements = new Set();
+    introPromise = null;  
+    resolve();  
+  }, FADE_DURATION);  
+}  
 
-    const sparkleLayer = intro.querySelector(".intro-sparkles");
+// Show the intro above the already-loaded gallery.  
+intro.hidden = false;  
+intro.setAttribute("aria-hidden", "false");  
 
-    function burstSparkles(count) {
-      if (finished || !sparkleLayer) return;
+// Force the browser to register the initial hidden state.  
+void intro.offsetWidth;  
 
-      for (let i = 0; i < count; i++) {
-        const spark = document.createElement("span");
+requestAnimationFrame(() => {  
+  intro.classList.add("is-active");  
+});  
 
-        const angle = Math.random() * Math.PI * 2;
-        const distance = 65 + Math.random() * 145;
-        const size = 2 + Math.random() * 3;
-        const duration = 650 + Math.random() * 450;
+// Start the intro music after the visitor submits the password.  
+if (audio) {  
+  audio.pause();  
 
-        spark.className = "intro-burst-spark";
-        spark.setAttribute("aria-hidden", "true");
+  try {  
+    audio.currentTime = 0;  
+  } catch (error) {  
+    // Continue even if the browser cannot reset the audio.  
+  }  
 
-        spark.style.setProperty("--spark-size", `${size}px`);
+  audio.volume = 0.65;  
 
-        spark.style.setProperty(
-          "--spark-x",
-          `${Math.cos(angle) * distance}px`
-        );
+  const playPromise = audio.play();  
 
-        spark.style.setProperty(
-          "--spark-y",
-          `${Math.sin(angle) * distance}px`
-        );
+  if (playPromise && typeof playPromise.catch === "function") {  
+    playPromise.catch(() => {  
+      // The visual intro still runs if autoplay is blocked  
+      // or the MP3 file cannot be loaded.  
+    });  
+  }  
+}  
 
-        spark.style.setProperty(
-          "--spark-duration",
-          `${duration}ms`
-        );
+finishTimer = window.setTimeout(  
+  finishIntro,  
+  INTRO_DURATION  
+);
 
-        sparkleLayer.appendChild(spark);
-        sparkleElements.add(spark);
+});
 
-        function removeSpark() {
-          spark.remove();
-          sparkleElements.delete(spark);
-        }
-
-        spark.addEventListener("animationend", removeSpark, {
-          once: true
-        });
-
-        sparkleTimers.push(
-          window.setTimeout(removeSpark, duration + 150)
-        );
-      }
-    }
-
-    function scheduleBurst(time, count) {
-      sparkleTimers.push(
-        window.setTimeout(() => {
-          burstSparkles(count);
-        }, time)
-      );
-    }
-
-    function finishIntro() {
-      if (finished) return;
-
-      finished = true;
-
-      if (finishTimer) {
-        window.clearTimeout(finishTimer);
-      }
-
-      sparkleTimers.forEach((timer) => {
-        window.clearTimeout(timer);
-      });
-
-      sparkleElements.forEach((spark) => {
-        spark.remove();
-      });
-
-      sparkleElements.clear();
-
-      intro.classList.add("is-leaving");
-
-      if (audio) {
-        audio.pause();
-
-        try {
-          audio.currentTime = 0;
-        } catch (error) {
-          // Continue if the browser cannot reset the audio.
-        }
-      }
-
-      window.setTimeout(() => {
-        intro.hidden = true;
-
-        intro.classList.remove(
-          "is-active",
-          "is-leaving"
-        );
-
-        intro.setAttribute("aria-hidden", "true");
-
-        introPromise = null;
-        resolve();
-      }, FADE_DURATION);
-    }
-
-    // Display the existing intro and existing galaxy circle.
-    intro.hidden = false;
-    intro.setAttribute("aria-hidden", "false");
-
-    // Let the browser register the initial state.
-    void intro.offsetWidth;
-
-    requestAnimationFrame(() => {
-      intro.classList.add("is-active");
-    });
-
-    /*
-      EXACT INTRO TIMELINE
-
-      0–2.1 seconds: Normal circle speed.
-      2.1–3 seconds: First fast-spin interval.
-      3–4.5 seconds: Normal speed.
-      4.5–6 seconds: Second, medium-fast interval.
-      6–19 seconds: Normal speed until the fade finishes.
-
-      This section adds sparkle effects only.
-      Your existing CSS remains responsible for circle rotation.
-    */
-
-    scheduleBurst(2100, 24);
-    scheduleBurst(2550, 12);
-
-    scheduleBurst(3300, 8);
-
-    scheduleBurst(4500, 20);
-    scheduleBurst(5100, 28);
-    scheduleBurst(5700, 12);
-
-    // Start the intro music after a successful viewer login.
-    if (audio) {
-      audio.pause();
-
-      try {
-        audio.currentTime = 0;
-      } catch (error) {
-        // Continue if seeking is unavailable.
-      }
-
-      audio.volume = 0.65;
-
-      const playPromise = audio.play();
-
-      if (
-        playPromise &&
-        typeof playPromise.catch === "function"
-      ) {
-        playPromise.catch(() => {
-          // The visual intro continues if audio cannot play.
-        });
-      }
-    }
-
-    // Begin fading at 18.1 seconds; finish at 19 seconds.
-    finishTimer = window.setTimeout(
-      finishIntro,
-      INTRO_DURATION
-    );
-  });
-
-  return introPromise;
+return introPromise;
 }
 
 /* =========================================
-   MUSIC PLAYER — EXISTING PLAYER PRESERVED
-   ========================================= */
+MUSIC PLAYER — EXISTING PLAYER PRESERVED
+========================================= */
 
 function setupMusicPlayer() {
-  const audio = $("afterglow-music");
-  const toggle = $("music-toggle");
-  const playPause = $("music-play-pause");
-  const next = $("music-next");
-  const previous = $("music-previous");
-  const details = $("music-details");
-  const title = $("music-title");
+const audio = $("afterglow-music");
+const toggle = $("music-toggle");
+const playPause = $("music-play-pause");
+const next = $("music-next");
+const previous = $("music-previous");
+const details = $("music-details");
+const title = $("music-title");
 
-  if (!audio || !toggle || !playPause || !next || !previous) {
-    return;
-  }
+if (!audio || !toggle || !playPause || !next || !previous) return;
+if (audio.dataset.musicReady === "true") return;
 
-  if (audio.dataset.musicReady === "true") return;
+audio.dataset.musicReady = "true";
+audio.loop = false;
+audio.preload = "auto";
+audio.volume = 0.35;
 
-  audio.dataset.musicReady = "true";
-  audio.loop = false;
-  audio.preload = "auto";
-  audio.volume = 0.35;
+function updatePlaybackUI() {
+const playing = !audio.paused;
 
-  function updatePlaybackUI() {
-    const playing = !audio.paused;
+playPause.textContent = playing ? "Ⅱ" : "▶";  
+playPause.setAttribute(  
+  "aria-label",  
+  playing ? "Pause music" : "Play music"  
+);  
 
-    playPause.textContent = playing ? "Ⅱ" : "▶";
+toggle.classList.toggle("is-playing", playing);
 
-    playPause.setAttribute(
-      "aria-label",
-      playing ? "Pause music" : "Play music"
-    );
+}
 
-    toggle.classList.toggle("is-playing", playing);
-  }
+function loadSong(index, autoplay = false) {
+if (!MUSIC_PLAYLIST.length) return;
 
-  function loadSong(index, autoplay = false) {
-    if (!MUSIC_PLAYLIST.length) return;
+currentSongIndex =  
+  (index + MUSIC_PLAYLIST.length) % MUSIC_PLAYLIST.length;  
 
-    currentSongIndex =
-      (index + MUSIC_PLAYLIST.length) % MUSIC_PLAYLIST.length;
+const song = MUSIC_PLAYLIST[currentSongIndex];  
 
-    const song = MUSIC_PLAYLIST[currentSongIndex];
+audio.src = song.src;  
 
-    audio.src = song.src;
+if (title) title.textContent = song.title;  
 
-    if (title) {
-      title.textContent = song.title;
-    }
+audio.load();  
 
-    audio.load();
+if (autoplay) {  
+  audio.play().catch(() => {  
+    updatePlaybackUI();  
+  });  
+}
 
-    if (autoplay) {
-      audio.play().catch(() => {
-        updatePlaybackUI();
-      });
-    }
-  }
+}
 
-  async function playMusic() {
-    try {
-      if (!audio.src) {
-        loadSong(currentSongIndex, false);
-      }
+async function playMusic() {
+try {
+if (!audio.src) loadSong(currentSongIndex, false);
+await audio.play();
+} catch (error) {
+console.info("Tap the music button to start playback.");
+}
 
-      await audio.play();
-    } catch (error) {
-      console.info("Tap the music button to start playback.");
-    }
+updatePlaybackUI();
 
-    updatePlaybackUI();
-  }
+}
 
-  function pauseMusic() {
-    audio.pause();
-    updatePlaybackUI();
-  }
+function pauseMusic() {
+audio.pause();
+updatePlaybackUI();
+}
 
-  function toggleControls() {
-    musicControlsOpen = !musicControlsOpen;
+function toggleControls() {
+musicControlsOpen = !musicControlsOpen;
 
-    if (details) {
-      details.hidden = !musicControlsOpen;
-    }
+if (details) details.hidden = !musicControlsOpen;  
 
-    toggle.setAttribute(
-      "aria-expanded",
-      String(musicControlsOpen)
-    );
+toggle.setAttribute("aria-expanded", String(musicControlsOpen));  
 
-    toggle.setAttribute(
-      "aria-label",
-      musicControlsOpen
-        ? "Close music controls"
-        : "Open music controls"
-    );
+toggle.setAttribute(  
+  "aria-label",  
+  musicControlsOpen  
+    ? "Close music controls"  
+    : "Open music controls"  
+);  
 
-    if (musicControlsOpen && audio.paused) {
-      playMusic();
-    }
-  }
+if (musicControlsOpen && audio.paused) {  
+  playMusic();  
+}
 
-  toggle.addEventListener("click", toggleControls);
+}
 
-  playPause.addEventListener("click", () => {
-    if (audio.paused) {
-      playMusic();
-    } else {
-      pauseMusic();
-    }
-  });
+toggle.addEventListener("click", toggleControls);
 
-  next.addEventListener("click", () => {
-    loadSong(currentSongIndex + 1, true);
-  });
+playPause.addEventListener("click", () => {
+if (audio.paused) {
+playMusic();
+} else {
+pauseMusic();
+}
+});
 
-  previous.addEventListener("click", () => {
-    if (audio.currentTime > 3) {
-      audio.currentTime = 0;
-      playMusic();
-    } else {
-      loadSong(currentSongIndex - 1, true);
-    }
-  });
+next.addEventListener("click", () => {
+loadSong(currentSongIndex + 1, true);
+});
 
-  audio.addEventListener("play", updatePlaybackUI);
-  audio.addEventListener("pause", updatePlaybackUI);
+previous.addEventListener("click", () => {
+if (audio.currentTime > 3) {
+audio.currentTime = 0;
+playMusic();
+} else {
+loadSong(currentSongIndex - 1, true);
+}
+});
 
-  audio.addEventListener("ended", () => {
-    loadSong(currentSongIndex + 1, true);
-  });
+audio.addEventListener("play", updatePlaybackUI);
+audio.addEventListener("pause", updatePlaybackUI);
 
-  audio.addEventListener("error", () => {
-    console.warn(
-      "Could not load the music file. Check the MP3 filename and repository path."
-    );
+audio.addEventListener("ended", () => {
+loadSong(currentSongIndex + 1, true);
+});
 
-    updatePlaybackUI();
-  });
+audio.addEventListener("error", () => {
+console.warn(
+"Could not load the music file. Check the MP3 filename and repository path."
+);
+updatePlaybackUI();
+});
 
-  loadSong(0, false);
-  updatePlaybackUI();
+loadSong(0, false);
+updatePlaybackUI();
 
-  // Preserve existing player behavior.
-  playMusic();
+// Existing music player behavior is preserved.
+playMusic();
 }
 
 /* =========================================
-   DRAGGABLE MOON + SAVED POSITION + SPARKLES
-   ========================================= */
+DRAGGABLE MOON + SAVED POSITION + SPARKLES
+========================================= */
 
 function setupDraggableMusicButton() {
-  const player = $("music-player");
-  const button = $("music-toggle");
+const player = $("music-player");
+const button = $("music-toggle");
 
-  if (!player || !button) return;
-  if (button.dataset.dragReady === "true") return;
+if (!player || !button) return;
+if (button.dataset.dragReady === "true") return;
 
-  button.dataset.dragReady = "true";
+button.dataset.dragReady = "true";
 
-  let dragging = false;
-  let moved = false;
-  let startX = 0;
-  let startY = 0;
-  let originX = 0;
-  let originY = 0;
-  let suppressClick = false;
-  let lastSparkleTime = 0;
+let dragging = false;
+let moved = false;
+let startX = 0;
+let startY = 0;
+let originX = 0;
+let originY = 0;
+let suppressClick = false;
+let lastSparkleTime = 0;
 
-  const STORAGE_KEY = "afterglow-music-position";
+const STORAGE_KEY = "afterglow-music-position";
 
-  function keepOnScreen(x, y) {
-    const margin = 4;
+function keepOnScreen(x, y) {
+const margin = 4;
 
-    const maxX = Math.max(
-      margin,
-      window.innerWidth - player.offsetWidth - margin
-    );
+const maxX = Math.max(  
+  margin,  
+  window.innerWidth - player.offsetWidth - margin  
+);  
 
-    const maxY = Math.max(
-      margin,
-      window.innerHeight - player.offsetHeight - margin
-    );
+const maxY = Math.max(  
+  margin,  
+  window.innerHeight - player.offsetHeight - margin  
+);  
 
-    return {
-      x: Math.min(maxX, Math.max(margin, x)),
-      y: Math.min(maxY, Math.max(margin, y))
-    };
-  }
+return {  
+  x: Math.min(maxX, Math.max(margin, x)),  
+  y: Math.min(maxY, Math.max(margin, y))  
+};
 
-  function savePosition() {
-    try {
-      localStorage.setItem(
-        STORAGE_KEY,
-        JSON.stringify({
-          x: player.offsetLeft,
-          y: player.offsetTop
-        })
-      );
-    } catch (error) {
-      console.info("Could not save the moon position.");
-    }
-  }
+}
 
-  function restorePosition() {
-    try {
-      const saved = JSON.parse(
-        localStorage.getItem(STORAGE_KEY)
-      );
+function savePosition() {
+try {
+localStorage.setItem(
+STORAGE_KEY,
+JSON.stringify({
+x: player.offsetLeft,
+y: player.offsetTop
+})
+);
+} catch (error) {
+console.info("Could not save the moon position.");
+}
+}
 
-      if (
-        !saved ||
-        !Number.isFinite(saved.x) ||
-        !Number.isFinite(saved.y)
-      ) {
-        return;
-      }
+function restorePosition() {
+try {
+const saved = JSON.parse(localStorage.getItem(STORAGE_KEY));
 
-      const position = keepOnScreen(saved.x, saved.y);
+if (  
+    !saved ||  
+    !Number.isFinite(saved.x) ||  
+    !Number.isFinite(saved.y)  
+  ) {  
+    return;  
+  }  
 
-      player.style.left = position.x + "px";
-      player.style.top = position.y + "px";
-      player.style.right = "auto";
-      player.style.bottom = "auto";
-    } catch (error) {
-      // Keep the default bottom-right position.
-    }
-  }
+  const position = keepOnScreen(saved.x, saved.y);  
 
-  function createSparkle(x, y) {
-    const sparkle = document.createElement("span");
+  player.style.left = position.x + "px";  
+  player.style.top = position.y + "px";  
+  player.style.right = "auto";  
+  player.style.bottom = "auto";  
+} catch (error) {  
+  // Keep the default bottom-right position.  
+}
 
-    sparkle.className = "afterglow-sparkle";
-    sparkle.textContent = Math.random() > 0.5 ? "✦" : "✧";
+}
 
-    sparkle.style.left = x + "px";
-    sparkle.style.top = y + "px";
+function createSparkle(x, y) {
+const sparkle = document.createElement("span");
 
-    sparkle.style.setProperty(
-      "--sparkle-x",
-      Math.random() * 34 - 17 + "px"
-    );
+sparkle.className = "afterglow-sparkle";  
+sparkle.textContent = Math.random() > 0.5 ? "✦" : "✧";  
 
-    sparkle.style.setProperty(
-      "--sparkle-y",
-      Math.random() * 34 - 17 + "px"
-    );
+sparkle.style.left = x + "px";  
+sparkle.style.top = y + "px";  
 
-    document.body.appendChild(sparkle);
+sparkle.style.setProperty(  
+  "--sparkle-x",  
+  (Math.random() * 34 - 17) + "px"  
+);  
 
-    sparkle.addEventListener(
-      "animationend",
-      () => sparkle.remove(),
-      { once: true }
-    );
+sparkle.style.setProperty(  
+  "--sparkle-y",  
+  (Math.random() * 34 - 17) + "px"  
+);  
 
-    window.setTimeout(() => sparkle.remove(), 900);
-  }
+document.body.appendChild(sparkle);  
 
-  function createSparkleTrail(x, y) {
-    const now = performance.now();
+sparkle.addEventListener("animationend", () => {  
+  sparkle.remove();  
+}, { once: true });  
 
-    if (now - lastSparkleTime < 45) return;
+window.setTimeout(() => sparkle.remove(), 900);
 
-    lastSparkleTime = now;
+}
 
-    createSparkle(
-      x + Math.random() * 14 - 7,
-      y + Math.random() * 14 - 7
-    );
+function createSparkleTrail(x, y) {
+const now = performance.now();
 
-    if (Math.random() > 0.6) {
-      createSparkle(
-        x + Math.random() * 22 - 11,
-        y + Math.random() * 22 - 11
-      );
-    }
-  }
+if (now - lastSparkleTime < 45) return;  
 
-  restorePosition();
+lastSparkleTime = now;  
 
-  button.addEventListener("pointerdown", (event) => {
-    if (event.button !== undefined && event.button !== 0) {
-      return;
-    }
+createSparkle(  
+  x + Math.random() * 14 - 7,  
+  y + Math.random() * 14 - 7  
+);  
 
-    dragging = true;
-    moved = false;
-    suppressClick = false;
+if (Math.random() > 0.6) {  
+  createSparkle(  
+    x + Math.random() * 22 - 11,  
+    y + Math.random() * 22 - 11  
+  );  
+}
 
-    startX = event.clientX;
-    startY = event.clientY;
+}
 
-    const rect = player.getBoundingClientRect();
+restorePosition();
 
-    originX = rect.left;
-    originY = rect.top;
+button.addEventListener("pointerdown", (event) => {
+if (event.button !== undefined && event.button !== 0) return;
 
-    player.style.left = originX + "px";
-    player.style.top = originY + "px";
-    player.style.right = "auto";
-    player.style.bottom = "auto";
+dragging = true;  
+moved = false;  
+suppressClick = false;  
 
-    player.classList.add("is-dragging");
+startX = event.clientX;  
+startY = event.clientY;  
 
-    try {
-      button.setPointerCapture(event.pointerId);
-    } catch (error) {
-      // Pointer capture may not be available.
-    }
+const rect = player.getBoundingClientRect();  
 
-    event.preventDefault();
-  });
+originX = rect.left;  
+originY = rect.top;  
 
-  button.addEventListener("pointermove", (event) => {
-    if (!dragging) return;
+player.style.left = originX + "px";  
+player.style.top = originY + "px";  
+player.style.right = "auto";  
+player.style.bottom = "auto";  
 
-    const dx = event.clientX - startX;
-    const dy = event.clientY - startY;
+player.classList.add("is-dragging");  
 
-    if (Math.abs(dx) > 5 || Math.abs(dy) > 5) {
-      moved = true;
-    }
+try {  
+  button.setPointerCapture(event.pointerId);  
+} catch (error) {  
+  // Pointer capture may not be available.  
+}  
 
-    if (!moved) return;
+event.preventDefault();
 
-    const position = keepOnScreen(
-      originX + dx,
-      originY + dy
-    );
+});
 
-    player.style.left = position.x + "px";
-    player.style.top = position.y + "px";
+button.addEventListener("pointermove", (event) => {
+if (!dragging) return;
 
-    createSparkleTrail(event.clientX, event.clientY);
-  });
+const dx = event.clientX - startX;  
+const dy = event.clientY - startY;  
 
-  function finishDrag() {
-    if (!dragging) return;
+if (Math.abs(dx) > 5 || Math.abs(dy) > 5) {  
+  moved = true;  
+}  
 
-    dragging = false;
-    player.classList.remove("is-dragging");
+if (!moved) return;  
 
-    if (moved) {
-      suppressClick = true;
-      savePosition();
-    }
-  }
+const position = keepOnScreen(  
+  originX + dx,  
+  originY + dy  
+);  
 
-  button.addEventListener("pointerup", finishDrag);
-  button.addEventListener("pointercancel", finishDrag);
+player.style.left = position.x + "px";  
+player.style.top = position.y + "px";  
 
-  button.addEventListener(
-    "click",
-    (event) => {
-      if (!suppressClick) return;
+createSparkleTrail(event.clientX, event.clientY);
 
-      event.preventDefault();
-      event.stopImmediatePropagation();
+});
 
-      suppressClick = false;
-    },
-    true
-  );
+function finishDrag() {
+if (!dragging) return;
 
-  window.addEventListener("resize", () => {
-    const rect = player.getBoundingClientRect();
+dragging = false;  
+player.classList.remove("is-dragging");  
 
-    const position = keepOnScreen(
-      rect.left,
-      rect.top
-    );
+if (moved) {  
+  suppressClick = true;  
+  savePosition();  
+}
 
-    player.style.left = position.x + "px";
-    player.style.top = position.y + "px";
-    player.style.right = "auto";
-    player.style.bottom = "auto";
+}
 
-    savePosition();
-  });
+button.addEventListener("pointerup", finishDrag);
+button.addEventListener("pointercancel", finishDrag);
+
+button.addEventListener("click", (event) => {
+if (!suppressClick) return;
+
+event.preventDefault();  
+event.stopImmediatePropagation();  
+
+suppressClick = false;
+
+}, true);
+
+window.addEventListener("resize", () => {
+const rect = player.getBoundingClientRect();
+
+const position = keepOnScreen(  
+  rect.left,  
+  rect.top  
+);  
+
+player.style.left = position.x + "px";  
+player.style.top = position.y + "px";  
+player.style.right = "auto";  
+player.style.bottom = "auto";  
+
+savePosition();
+
+});
 }
 
 /* =========================================
-   MEMORY DATA
-   ========================================= */
+MEMORY DATA
+========================================= */
 
 const defaultMemories = Array.from({ length: 24 }, (_, i) => ({
-  id: i + 1,
-  title: `Memory ${String(i + 1).padStart(2, "0")}`,
-  body: "",
-  image_url: null,
-  image_path: null
+id: i + 1,
+title: Memory ${String(i + 1).padStart(2, "0")},
+body: "",
+image_url: null,
+image_path: null
 }));
 
 async function request(action, data = {}, token = currentToken) {
-  const response = await fetch(GATEWAY, {
-    method: "POST",
+const response = await fetch(GATEWAY, {
+method: "POST",
+headers: {
+"Content-Type": "application/json",
+...(token ? { Authorization: Bearer ${token} } : {})
+},
+body: JSON.stringify({ action, ...data })
+});
 
-    headers: {
-      "Content-Type": "application/json",
-      ...(token ? { Authorization: `Bearer ${token}` } : {})
-    },
+const result = await response.json().catch(() => ({}));
 
-    body: JSON.stringify({ action, ...data })
-  });
+if (!response.ok) {
+throw new Error(result.error || Request failed (${response.status}));
+}
 
-  const result = await response.json().catch(() => ({}));
-
-  if (!response.ok) {
-    throw new Error(
-      result.error || `Request failed (${response.status})`
-    );
-  }
-
-  return result;
+return result;
 }
 
 function showMessage(message, isError = false) {
-  const el = $("editor-message");
-  if (!el) return;
+const el = $("editor-message");
+if (!el) return;
 
-  el.textContent = message;
-  el.style.color = isError ? "#ff9baf" : "#d8c0ff";
+el.textContent = message;
+el.style.color = isError ? "#ff9baf" : "#d8c0ff";
 }
 
 function setOwnerStatus(message) {
-  const el = $("owner-status");
-  if (el) el.textContent = message;
+const el = $("owner-status");
+if (el) el.textContent = message;
 }
 
 function openOwnerModal() {
-  const modal = $("owner-modal");
-  if (!modal) return;
+const modal = $("owner-modal");
+if (!modal) return;
 
-  modal.classList.add("is-open", "open");
-  modal.style.display = "flex";
-  modal.setAttribute("aria-hidden", "false");
+modal.classList.add("is-open", "open");
+modal.style.display = "flex";
+modal.setAttribute("aria-hidden", "false");
 }
 
 function closeOwnerModal() {
-  const modal = $("owner-modal");
-  if (!modal) return;
+const modal = $("owner-modal");
+if (!modal) return;
 
-  modal.classList.remove("is-open", "open");
-  modal.style.display = "";
-  modal.setAttribute("aria-hidden", "true");
+modal.classList.remove("is-open", "open");
+modal.style.display = "";
+modal.setAttribute("aria-hidden", "true");
 }
 
-/* =========================================
-   VIEWER PASSWORD GATE
-   ========================================= */
-
 function makeGate() {
-  let gate = $("viewer-gate");
-  if (gate) return gate;
+let gate = $("viewer-gate");
+if (gate) return gate;
 
-  gate = document.createElement("div");
-  gate.id = "viewer-gate";
+gate = document.createElement("div");
+gate.id = "viewer-gate";
 
-  Object.assign(gate.style, {
-    position: "fixed",
-    inset: "0",
-    zIndex: "99999",
-    display: "flex",
-    alignItems: "center",
-    justifyContent: "center",
-    padding: "24px",
-    background: "radial-gradient(ellipse at top, #28143d, #10091d 70%)",
-    color: "#f8edff",
-    fontFamily: "Inter, sans-serif"
-  });
+Object.assign(gate.style, {
+position: "fixed",
+inset: "0",
+zIndex: "99999",
+display: "flex",
+alignItems: "center",
+justifyContent: "center",
+padding: "24px",
+background: "radial-gradient(ellipse at top, #28143d, #10091d 70%)",
+color: "#f8edff",
+fontFamily: "Inter, sans-serif"
+});
 
-  gate.innerHTML = `
-    <form id="viewer-login-form"
-      style="width:100%;max-width:380px;padding:30px 24px;
-      border:1px solid #68457d;border-radius:18px;
-      background:#170e25;text-align:center">
+gate.innerHTML = `
+<form id="viewer-login-form"  
+style="width:100%;max-width:380px;padding:30px 24px;  
+border:1px solid #68457d;border-radius:18px;  
+background:#170e25;text-align:center">
 
-      <p style="letter-spacing:4px;font-size:11px;color:#d4a8ff">
-        AFTERGLOW ✦
-      </p>
+<p style="letter-spacing:4px;font-size:11px;color:#d4a8ff">  
+    AFTERGLOW ✦  
+  </p>  
 
-      <h2 style="font-family:Georgia,serif;font-size:32px;font-weight:400">
-        A private <em>universe</em>
-      </h2>
+  <h2 style="font-family:Georgia,serif;font-size:32px;font-weight:400">  
+    A private <em>universe</em>  
+  </h2>  
 
-      <p style="color:#c7b7d2;line-height:1.7">
-        Enter the viewing password to open the memory archive.
-      </p>
+  <p style="color:#c7b7d2;line-height:1.7">  
+    Enter the viewing password to open the memory archive.  
+  </p>  
 
-      <input id="viewer-password" type="password"
-        autocomplete="current-password" required
-        placeholder="Viewing password"
-        style="box-sizing:border-box;width:100%;padding:14px;
-        margin:12px 0;border:1px solid #60416f;border-radius:9px;
-        background:#10091d;color:white;font-size:16px">
+  <input id="viewer-password" type="password"  
+    autocomplete="current-password" required  
+    placeholder="Viewing password"  
+    style="box-sizing:border-box;width:100%;padding:14px;  
+    margin:12px 0;border:1px solid #60416f;border-radius:9px;  
+    background:#10091d;color:white;font-size:16px">  
 
-      <button type="submit"
-        style="width:100%;padding:14px;border:0;border-radius:9px;
-        background:#b88be4;color:#160c20;font-weight:600;font-size:15px">
-        Open memories
-      </button>
+  <button type="submit"  
+    style="width:100%;padding:14px;border:0;border-radius:9px;  
+    background:#b88be4;color:#160c20;font-weight:600;font-size:15px">  
+    Open memories  
+  </button>  
 
-      <p id="viewer-error" role="status"
-        style="color:#ff9baf;font-size:13px"></p>
-    </form>
-  `;
+  <p id="viewer-error" role="status"  
+    style="color:#ff9baf;font-size:13px"></p>  
+</form>
 
-  document.body.appendChild(gate);
+`;
 
-  $("viewer-login-form").addEventListener(
-    "submit",
-    viewerLogin
-  );
+document.body.appendChild(gate);
+$("viewer-login-form").addEventListener("submit", viewerLogin);
 
-  return gate;
+return gate;
 }
 
 function setSiteVisible(visible) {
-  const gate = $("viewer-gate");
+const gate = $("viewer-gate");
 
-  document.querySelectorAll(
-    "#particles, .site-header, main, .site-footer"
-  ).forEach((el) => {
-    el.hidden = !visible;
-  });
+document.querySelectorAll(
+"#particles, .site-header, main, .site-footer"
+).forEach((el) => {
+el.hidden = !visible;
+});
 
-  if (gate) {
-    gate.hidden = visible;
-    gate.style.display = visible ? "none" : "flex";
-  }
+if (gate) {
+gate.hidden = visible;
+gate.style.display = visible ? "none" : "flex";
+}
 }
 
 /* =========================================
-   VIEWER LOGIN + INTRO
-   ========================================= */
+VIEWER LOGIN + INTRO
+========================================= */
 
 async function viewerLogin(event) {
-  event.preventDefault();
+event.preventDefault();
 
-  const password = $("viewer-password").value;
-  const errorEl = $("viewer-error");
+const password = $("viewer-password").value;
+const errorEl = $("viewer-error");
+const button = $("viewer-login-form").querySelector(
+'button[type="submit"]'
+);
 
-  const button = $("viewer-login-form").querySelector(
-    'button[type="submit"]'
-  );
+errorEl.textContent = "Checking password…";
+if (button) button.disabled = true;
 
-  errorEl.textContent = "Checking password…";
+try {
+const result = await request("login", {
+mode: "view",
+password
+}, "");
 
-  if (button) button.disabled = true;
+if (!result.token) {  
+  throw new Error("The server did not return an access token.");  
+}  
 
-  try {
-    const result = await request(
-      "login",
-      {
-        mode: "view",
-        password
-      },
-      ""
-    );
+currentToken = result.token;  
+currentRole = result.role || "view";  
 
-    if (!result.token) {
-      throw new Error(
-        "The server did not return an access token."
-      );
-    }
+sessionStorage.setItem("afterglow_view_token", currentToken);  
+sessionStorage.removeItem("afterglow_owner_token");  
 
-    currentToken = result.token;
-    currentRole = result.role || "view";
+// Load the gallery before showing the intro.  
+await loadMemories();  
 
-    sessionStorage.setItem(
-      "afterglow_view_token",
-      currentToken
-    );
+errorEl.textContent = "";  
+$("viewer-password").value = "";  
 
-    sessionStorage.removeItem("afterglow_owner_token");
+// Hide the password gate and reveal the gallery underneath.  
+// The intro covers the gallery while it plays.  
+setSiteVisible(true);  
 
-    // Load the gallery before showing the intro.
-    await loadMemories();
+// Only manual successful viewer login triggers the intro.  
+await startAfterglowIntro();
 
-    errorEl.textContent = "";
-    $("viewer-password").value = "";
-
-    // Reveal the gallery underneath the intro.
-    setSiteVisible(true);
-
-    // Play the intro after successful manual viewer login.
-    await startAfterglowIntro();
-
-  } catch (error) {
-    errorEl.textContent =
-      error.message || "Could not open the archive.";
-  } finally {
-    if (button) button.disabled = false;
-  }
+} catch (error) {
+errorEl.textContent =
+error.message || "Could not open the archive.";
+} finally {
+if (button) button.disabled = false;
+}
 }
 
 /* =========================================
-   OWNER LOGIN
-   ========================================= */
+OWNER LOGIN
+========================================= */
 
 function setupOwnerForm() {
-  const form = $("login-form");
-  const email = $("owner-email");
+const form = $("login-form");
+const email = $("owner-email");
 
-  if (email) {
-    email.required = false;
-    email.value = "";
-    email.hidden = true;
+if (email) {
+email.required = false;
+email.value = "";
+email.hidden = true;
 
-    const label = document.querySelector(
-      'label[for="owner-email"]'
-    );
+const label = document.querySelector('label[for="owner-email"]');  
+if (label) label.hidden = true;
 
-    if (label) label.hidden = true;
-  }
+}
 
-  const passwordLabel = document.querySelector(
-    'label[for="owner-password"]'
-  );
+const passwordLabel = document.querySelector(
+'label[for="owner-password"]'
+);
 
-  if (passwordLabel) {
-    passwordLabel.textContent = "Owner password";
-  }
+if (passwordLabel) {
+passwordLabel.textContent = "Owner password";
+}
 
-  const password = $("owner-password");
+const password = $("owner-password");
 
-  if (password) {
-    password.autocomplete = "current-password";
-    password.placeholder = "Your owner password";
-  }
+if (password) {
+password.autocomplete = "current-password";
+password.placeholder = "Your owner password";
+}
 
-  form?.addEventListener("submit", ownerLogin);
+form?.addEventListener("submit", ownerLogin);
 
-  $("owner-button")?.addEventListener("click", () => {
-    openOwnerModal();
+$("owner-button")?.addEventListener("click", () => {
+openOwnerModal();
 
-    if (currentRole === "owner") {
-      $("login-form").hidden = true;
-      $("editor").hidden = false;
-      setOwnerStatus("Owner access granted.");
-    } else {
-      $("login-form").hidden = false;
-      $("editor").hidden = true;
+if (currentRole === "owner") {  
+  $("login-form").hidden = true;  
+  $("editor").hidden = false;  
+  setOwnerStatus("Owner access granted.");  
+} else {  
+  $("login-form").hidden = false;  
+  $("editor").hidden = true;  
+  setOwnerStatus("Enter the owner password to manage memories.");  
+}
 
-      setOwnerStatus(
-        "Enter the owner password to manage memories."
-      );
-    }
-  });
+});
 
-  $("close-modal")?.addEventListener(
-    "click",
-    closeOwnerModal
-  );
+$("close-modal")?.addEventListener("click", closeOwnerModal);
 
-  document.querySelectorAll("[data-close-modal]").forEach((el) => {
-    el.addEventListener("click", closeOwnerModal);
-  });
+document.querySelectorAll("[data-close-modal]").forEach((el) => {
+el.addEventListener("click", closeOwnerModal);
+});
 
-  $("logout-button")?.addEventListener(
-    "click",
-    ownerLogout
-  );
-
-  $("save-memory")?.addEventListener(
-    "click",
-    saveMemory
-  );
-
-  $("remove-image")?.addEventListener(
-    "click",
-    removeImage
-  );
-
-  $("memory-select")?.addEventListener(
-    "change",
-    chooseMemory
-  );
+$("logout-button")?.addEventListener("click", ownerLogout);
+$("save-memory")?.addEventListener("click", saveMemory);
+$("remove-image")?.addEventListener("click", removeImage);
+$("memory-select")?.addEventListener("change", chooseMemory);
 }
 
 async function ownerLogin(event) {
-  event.preventDefault();
+event.preventDefault();
 
-  const password = $("owner-password").value;
-  const form = $("login-form");
+const password = $("owner-password").value;
+const form = $("login-form");
+const button = form.querySelector('button[type="submit"]');
 
-  const button = form.querySelector(
-    'button[type="submit"]'
-  );
+if (button) button.disabled = true;
+setOwnerStatus("Checking owner password…");
 
-  if (button) button.disabled = true;
+try {
+const result = await request("login", {
+mode: "owner",
+password
+}, "");
 
-  setOwnerStatus("Checking owner password…");
+if (!result.token) {  
+  throw new Error("The server did not return an access token.");  
+}  
 
-  try {
-    const result = await request(
-      "login",
-      {
-        mode: "owner",
-        password
-      },
-      ""
-    );
+currentToken = result.token;  
+currentRole = "owner";  
 
-    if (!result.token) {
-      throw new Error(
-        "The server did not return an access token."
-      );
-    }
+sessionStorage.setItem("afterglow_owner_token", currentToken);  
+sessionStorage.removeItem("afterglow_view_token");  
 
-    currentToken = result.token;
-    currentRole = "owner";
+$("owner-password").value = "";  
+form.hidden = true;  
+$("editor").hidden = false;  
 
-    sessionStorage.setItem(
-      "afterglow_owner_token",
-      currentToken
-    );
+setOwnerStatus("Owner access granted.");  
+showMessage("Loading your memories…");  
 
-    sessionStorage.removeItem("afterglow_view_token");
+setSiteVisible(true);  
+openOwnerModal();  
 
-    $("owner-password").value = "";
-    form.hidden = true;
-    $("editor").hidden = false;
+await loadMemories();  
 
-    setOwnerStatus("Owner access granted.");
-    showMessage("Loading your memories…");
+showMessage("You're signed in. Your memories are ready.");
 
-    setSiteVisible(true);
-    openOwnerModal();
-
-    await loadMemories();
-
-    showMessage(
-      "You're signed in. Your memories are ready."
-    );
-
-  } catch (error) {
-    setOwnerStatus(
-      error.message || "Owner login failed."
-    );
-
-    showMessage(
-      error.message || "Could not load memories.",
-      true
-    );
-  } finally {
-    if (button) button.disabled = false;
-  }
+} catch (error) {
+setOwnerStatus(error.message || "Owner login failed.");
+showMessage(error.message || "Could not load memories.", true);
+} finally {
+if (button) button.disabled = false;
+}
 }
 
 function ownerLogout() {
-  sessionStorage.removeItem("afterglow_owner_token");
-  sessionStorage.removeItem("afterglow_view_token");
+sessionStorage.removeItem("afterglow_owner_token");
+sessionStorage.removeItem("afterglow_view_token");
 
-  currentToken = "";
-  currentRole = "";
-  selectedMemory = null;
+currentToken = "";
+currentRole = "";
+selectedMemory = null;
 
-  $("login-form").hidden = false;
-  $("editor").hidden = true;
+$("login-form").hidden = false;
+$("editor").hidden = true;
 
-  closeOwnerModal();
-  setSiteVisible(false);
-  makeGate();
+closeOwnerModal();
+setSiteVisible(false);
+makeGate();
 
-  $("viewer-password").value = "";
-  $("viewer-error").textContent = "";
+$("viewer-password").value = "";
+$("viewer-error").textContent = "";
 }
 
 /* =========================================
-   MEMORY GALLERY
-   ========================================= */
+MEMORY GALLERY
+========================================= */
 
 function normalizeMemories(rows) {
-  const result = defaultMemories.map(
-    (memory) => ({ ...memory })
-  );
+const result = defaultMemories.map((memory) => ({ ...memory }));
 
-  rows.forEach((row, index) => {
-    const numericId = Number(row.id);
+rows.forEach((row, index) => {
+const numericId = Number(row.id);
 
-    const targetIndex =
-      Number.isInteger(numericId) &&
-      numericId >= 1 &&
-      numericId <= 24
-        ? numericId - 1
-        : index;
+const targetIndex =  
+  Number.isInteger(numericId) && numericId >= 1 && numericId <= 24  
+    ? numericId - 1  
+    : index;  
 
-    if (targetIndex >= 0 && targetIndex < 24) {
-      result[targetIndex] = {
-        ...result[targetIndex],
-        ...row,
-        image_path: row.image_path || null
-      };
-    }
-  });
+if (targetIndex >= 0 && targetIndex < 24) {  
+  result[targetIndex] = {  
+    ...result[targetIndex],  
+    ...row,  
+    image_path: row.image_path || null  
+  };  
+}
 
-  return result;
+});
+
+return result;
 }
 
 async function loadMemories() {
-  const result = await request("list");
-
-  memories = normalizeMemories(
-    result.memories || []
-  );
-
-  renderGallery();
-  populateMemorySelect();
+const result = await request("list");
+memories = normalizeMemories(result.memories || []);
+renderGallery();
+populateMemorySelect();
 }
 
 function renderGallery() {
-  const gallery = $("gallery");
-  if (!gallery) return;
+const gallery = $("gallery");
+if (!gallery) return;
 
-  gallery.replaceChildren();
+gallery.replaceChildren();
 
-  memories.forEach((memory, index) => {
-    const panel = document.createElement("article");
+memories.forEach((memory, index) => {
+const panel = document.createElement("article");
+panel.className = memory-panel${index % 2 ? " reverse" : ""};
 
-    panel.className =
-      `memory-panel${index % 2 ? " reverse" : ""}`;
+const visual = document.createElement("div");  
+visual.className = "memory-visual";  
 
-    const visual = document.createElement("div");
-    visual.className = "memory-visual";
+const number = document.createElement("span");  
+number.className = "memory-number";  
+number.textContent = String(index + 1).padStart(2, "0");  
 
-    const number = document.createElement("span");
-    number.className = "memory-number";
-    number.textContent = String(index + 1).padStart(2, "0");
+const imageWrap = document.createElement("div");  
+imageWrap.className = "memory-image-wrap";  
 
-    const imageWrap = document.createElement("div");
-    imageWrap.className = "memory-image-wrap";
+const placeholder = document.createElement("div");  
+placeholder.className = "image-placeholder";  
+placeholder.textContent = "✦ A moment to remember";  
 
-    const placeholder = document.createElement("div");
-    placeholder.className = "image-placeholder";
-    placeholder.textContent = "✦ A moment to remember";
+const image = document.createElement("img");  
+image.className = "memory-image";  
+image.alt = memory.title || `Memory ${index + 1}`;  
+image.loading = "eager";  
+image.decoding = "async";  
 
-    const image = document.createElement("img");
-    image.className = "memory-image";
-    image.alt = memory.title || `Memory ${index + 1}`;
-    image.loading = "eager";
-    image.decoding = "async";
+if (memory.image_url && /^https?:\/\//i.test(memory.image_url)) {  
+  image.src = memory.image_url;  
 
-    if (
-      memory.image_url &&
-      /^https?:\/\//i.test(memory.image_url)
-    ) {
-      image.src = memory.image_url;
+  image.addEventListener("load", () => {  
+    placeholder.hidden = true;  
+    image.hidden = false;  
+  });  
 
-      image.addEventListener("load", () => {
-        placeholder.hidden = true;
-        image.hidden = false;
-      });
+  image.addEventListener("error", () => {  
+    image.hidden = true;  
+    placeholder.hidden = false;  
+  });  
+} else {  
+  image.hidden = true;  
+}  
 
-      image.addEventListener("error", () => {
-        image.hidden = true;
-        placeholder.hidden = false;
-      });
-    } else {
-      image.hidden = true;
-    }
+placeholder.hidden = Boolean(memory.image_url);  
+imageWrap.append(image, placeholder);  
+visual.append(number, imageWrap);  
 
-    placeholder.hidden = Boolean(memory.image_url);
+const copy = document.createElement("div");  
+copy.className = "memory-copy";  
 
-    imageWrap.append(image, placeholder);
-    visual.append(number, imageWrap);
+const kicker = document.createElement("p");  
+kicker.className = "memory-kicker";  
+kicker.textContent =  
+  `FRAGMENT ${String(index + 1).padStart(2, "0")}`;  
 
-    const copy = document.createElement("div");
-    copy.className = "memory-copy";
+const title = document.createElement("h3");  
+title.className = "memory-title";  
+title.textContent = memory.title || `Memory ${index + 1}`;  
 
-    const kicker = document.createElement("p");
-    kicker.className = "memory-kicker";
-    kicker.textContent =
-      `FRAGMENT ${String(index + 1).padStart(2, "0")}`;
+const divider = document.createElement("div");  
+divider.className = "memory-divider";  
 
-    const title = document.createElement("h3");
-    title.className = "memory-title";
-    title.textContent =
-      memory.title || `Memory ${index + 1}`;
+const body = document.createElement("p");  
+body.className = "memory-body";  
+body.textContent =  
+  memory.body || "A space waiting for a memory to be written.";  
 
-    const divider = document.createElement("div");
-    divider.className = "memory-divider";
+copy.append(kicker, title, divider, body);  
+panel.append(visual, copy);  
+gallery.appendChild(panel);
 
-    const body = document.createElement("p");
-    body.className = "memory-body";
-    body.textContent =
-      memory.body ||
-      "A space waiting for a memory to be written.";
+});
 
-    copy.append(kicker, title, divider, body);
-    panel.append(visual, copy);
+const panels = gallery.querySelectorAll(".memory-panel");
 
-    gallery.appendChild(panel);
-  });
+if ("IntersectionObserver" in window) {
+const observer = new IntersectionObserver((entries) => {
+entries.forEach((entry) => {
+if (entry.isIntersecting) {
+entry.target.classList.add("visible");
+observer.unobserve(entry.target);
+}
+});
+}, { threshold: 0.12 });
 
-  const panels = gallery.querySelectorAll(".memory-panel");
+panels.forEach((panel) => observer.observe(panel));
 
-  if ("IntersectionObserver" in window) {
-    const observer = new IntersectionObserver(
-      (entries) => {
-        entries.forEach((entry) => {
-          if (entry.isIntersecting) {
-            entry.target.classList.add("visible");
-            observer.unobserve(entry.target);
-          }
-        });
-      },
-      { threshold: 0.12 }
-    );
-
-    panels.forEach((panel) => observer.observe(panel));
-  } else {
-    panels.forEach((panel) => {
-      panel.classList.add("visible");
-    });
-  }
+} else {
+panels.forEach((panel) => panel.classList.add("visible"));
+}
 }
 
 function populateMemorySelect() {
-  const select = $("memory-select");
-  if (!select) return;
+const select = $("memory-select");
+if (!select) return;
 
-  select.replaceChildren();
+select.replaceChildren();
 
-  memories.forEach((memory, index) => {
-    const option = document.createElement("option");
+memories.forEach((memory, index) => {
+const option = document.createElement("option");
+option.value = String(index);
+option.textContent =
+${String(index + 1).padStart(2, "0")} — ${memory.title};
 
-    option.value = String(index);
+select.appendChild(option);
 
-    option.textContent =
-      `${String(index + 1).padStart(2, "0")} — ${memory.title}`;
+});
 
-    select.appendChild(option);
-  });
-
-  chooseMemory();
+chooseMemory();
 }
 
 function chooseMemory() {
-  const select = $("memory-select");
+const select = $("memory-select");
+if (!select || !memories.length) return;
 
-  if (!select || !memories.length) return;
+selectedMemory = memories[Number(select.value)];
+if (!selectedMemory) return;
 
-  selectedMemory = memories[Number(select.value)];
+$("memory-title").value = selectedMemory.title || "";
+$("memory-body").value = selectedMemory.body || "";
+$("memory-image").value = "";
 
-  if (!selectedMemory) return;
-
-  $("memory-title").value =
-    selectedMemory.title || "";
-
-  $("memory-body").value =
-    selectedMemory.body || "";
-
-  $("memory-image").value = "";
-
-  showMessage("");
+showMessage("");
 }
 
 /* =========================================
-   SAVE AND REMOVE MEMORY PHOTOS
-   ========================================= */
+SAVE AND REMOVE MEMORY PHOTOS
+========================================= */
 
 async function saveMemory() {
-  if (currentRole !== "owner" || !selectedMemory) {
-    showMessage("Owner access is required.", true);
-    return;
-  }
+if (currentRole !== "owner" || !selectedMemory) {
+showMessage("Owner access is required.", true);
+return;
+}
 
-  const saveButton = $("save-memory");
-  saveButton.disabled = true;
+const saveButton = $("save-memory");
+saveButton.disabled = true;
 
-  try {
-    let imagePath =
-      selectedMemory.image_path || null;
+try {
+let imagePath = selectedMemory.image_path || null;
+const file = $("memory-image").files[0];
 
-    const file = $("memory-image").files[0];
+if (file) {  
+  if (file.size > 5 * 1024 * 1024) {  
+    throw new Error("Choose an image smaller than 5 MB.");  
+  }  
 
-    if (file) {
-      if (file.size > 5 * 1024 * 1024) {
-        throw new Error(
-          "Choose an image smaller than 5 MB."
-        );
-      }
+  const allowedTypes = [  
+    "image/jpeg",  
+    "image/png",  
+    "image/webp",  
+    "image/gif"  
+  ];  
 
-      const allowedTypes = [
-        "image/jpeg",
-        "image/png",
-        "image/webp",
-        "image/gif"
-      ];
+  if (!allowedTypes.includes(file.type)) {  
+    throw new Error("Choose a JPG, PNG, WEBP, or GIF image.");  
+  }  
 
-      if (!allowedTypes.includes(file.type)) {
-        throw new Error(
-          "Choose a JPG, PNG, WEBP, or GIF image."
-        );
-      }
+  if (!CONFIG?.url || !CONFIG?.publishableKey) {  
+    throw new Error("Supabase configuration is incomplete.");  
+  }  
 
-      if (!CONFIG?.url || !CONFIG?.publishableKey) {
-        throw new Error(
-          "Supabase configuration is incomplete."
-        );
-      }
+  const prepared = await request("prepare_upload", {  
+    contentType: file.type  
+  });  
 
-      const prepared = await request(
-        "prepare_upload",
-        {
-          contentType: file.type
-        }
-      );
+  if (!prepared.path || !prepared.token) {  
+    throw new Error("The server did not prepare the upload.");  
+  }  
 
-      if (!prepared.path || !prepared.token) {
-        throw new Error(
-          "The server did not prepare the upload."
-        );
-      }
+  if (!window.supabase) {  
+    throw new Error("The Supabase upload client is unavailable.");  
+  }  
 
-      if (!window.supabase) {
-        throw new Error(
-          "The Supabase upload client is unavailable."
-        );
-      }
+  if (!storageClient) {  
+    storageClient = window.supabase.createClient(  
+      CONFIG.url,  
+      CONFIG.publishableKey  
+    );  
+  }  
 
-      if (!storageClient) {
-        storageClient = window.supabase.createClient(
-          CONFIG.url,
-          CONFIG.publishableKey
-        );
-      }
+  const { error } = await storageClient.storage  
+    .from(BUCKET)  
+    .uploadToSignedUrl(prepared.path, prepared.token, file, {  
+      contentType: file.type,  
+      upsert: true  
+    });  
 
-      const { error } = await storageClient.storage
-        .from(BUCKET)
-        .uploadToSignedUrl(
-          prepared.path,
-          prepared.token,
-          file,
-          {
-            contentType: file.type,
-            upsert: true
-          }
-        );
+  if (error) throw error;  
 
-      if (error) throw error;
+  imagePath = prepared.path;  
+}  
 
-      imagePath = prepared.path;
-    }
+await request("save", {  
+  id: selectedMemory.id,  
+  title: $("memory-title").value.trim(),  
+  body: $("memory-body").value,  
+  image_path: imagePath  
+});  
 
-    await request("save", {
-      id: selectedMemory.id,
-      title: $("memory-title").value.trim(),
-      body: $("memory-body").value,
-      image_path: imagePath
-    });
+const savedId = selectedMemory.id;  
+await loadMemories();  
 
-    const savedId = selectedMemory.id;
+const updatedIndex = memories.findIndex(  
+  (memory) => String(memory.id) === String(savedId)  
+);  
 
-    await loadMemories();
+if (updatedIndex >= 0) {  
+  $("memory-select").value = String(updatedIndex);  
+  chooseMemory();  
+}  
 
-    const updatedIndex = memories.findIndex(
-      (memory) => String(memory.id) === String(savedId)
-    );
+showMessage("Memory saved successfully.");
 
-    if (updatedIndex >= 0) {
-      $("memory-select").value =
-        String(updatedIndex);
-
-      chooseMemory();
-    }
-
-    showMessage("Memory saved successfully.");
-
-  } catch (error) {
-    showMessage(
-      error.message || "Could not save this memory.",
-      true
-    );
-  } finally {
-    saveButton.disabled = false;
-  }
+} catch (error) {
+showMessage(error.message || "Could not save this memory.", true);
+} finally {
+saveButton.disabled = false;
+}
 }
 
 async function removeImage() {
-  if (currentRole !== "owner" || !selectedMemory) {
-    showMessage("Owner access is required.", true);
-    return;
-  }
+if (currentRole !== "owner" || !selectedMemory) {
+showMessage("Owner access is required.", true);
+return;
+}
 
-  const button = $("remove-image");
-  button.disabled = true;
+const button = $("remove-image");
+button.disabled = true;
 
-  try {
-    const removedId = selectedMemory.id;
+try {
+const removedId = selectedMemory.id;
 
-    await request("remove_image", {
-      id: removedId
-    });
+await request("remove_image", { id: removedId });  
+await loadMemories();  
 
-    await loadMemories();
+const updatedIndex = memories.findIndex(  
+  (memory) => String(memory.id) === String(removedId)  
+);  
 
-    const updatedIndex = memories.findIndex(
-      (memory) => String(memory.id) === String(removedId)
-    );
+if (updatedIndex >= 0) {  
+  $("memory-select").value = String(updatedIndex);  
+  chooseMemory();  
+}  
 
-    if (updatedIndex >= 0) {
-      $("memory-select").value =
-        String(updatedIndex);
+showMessage("Photo removed from this memory.");
 
-      chooseMemory();
-    }
-
-    showMessage("Photo removed from this memory.");
-
-  } catch (error) {
-    showMessage(
-      error.message || "Could not remove the photo.",
-      true
-    );
-  } finally {
-    button.disabled = false;
-  }
+} catch (error) {
+showMessage(error.message || "Could not remove the photo.", true);
+} finally {
+button.disabled = false;
+}
 }
 
 /* =========================================
-   BACKGROUND PARTICLES
-   ========================================= */
+BACKGROUND PARTICLES
+========================================= */
 
 function initParticles() {
-  const canvas = $("particles");
-  if (!canvas) return;
+const canvas = $("particles");
+if (!canvas) return;
 
-  const ctx = canvas.getContext("2d");
-  if (!ctx) return;
+const ctx = canvas.getContext("2d");
+if (!ctx) return;
 
-  let animationId = 0;
-  const particles = [];
+let animationId = 0;
+const particles = [];
 
-  function resize() {
-    const ratio = window.devicePixelRatio || 1;
+function resize() {
+const ratio = window.devicePixelRatio || 1;
 
-    canvas.width = window.innerWidth * ratio;
-    canvas.height = window.innerHeight * ratio;
+canvas.width = window.innerWidth * ratio;  
+canvas.height = window.innerHeight * ratio;  
 
-    canvas.style.width = `${window.innerWidth}px`;
-    canvas.style.height = `${window.innerHeight}px`;
+canvas.style.width = `${window.innerWidth}px`;  
+canvas.style.height = `${window.innerHeight}px`;  
 
-    ctx.setTransform(ratio, 0, 0, ratio, 0, 0);
-  }
+ctx.setTransform(ratio, 0, 0, ratio, 0, 0);
 
-  function createParticle() {
-    return {
-      x: Math.random() * window.innerWidth,
-      y: Math.random() * window.innerHeight,
-      radius: Math.random() * 1.8 + 0.4,
-      speed: Math.random() * 0.25 + 0.08,
-      alpha: Math.random() * 0.5 + 0.15
-    };
-  }
+}
 
-  for (let i = 0; i < 55; i++) {
-    particles.push(createParticle());
-  }
+function createParticle() {
+return {
+x: Math.random() * window.innerWidth,
+y: Math.random() * window.innerHeight,
+radius: Math.random() * 1.8 + 0.4,
+speed: Math.random() * 0.25 + 0.08,
+alpha: Math.random() * 0.5 + 0.15
+};
+}
 
-  function draw() {
-    ctx.clearRect(
-      0,
-      0,
-      window.innerWidth,
-      window.innerHeight
-    );
+for (let i = 0; i < 55; i++) {
+particles.push(createParticle());
+}
 
-    particles.forEach((particle) => {
-      particle.y -= particle.speed;
+function draw() {
+ctx.clearRect(0, 0, window.innerWidth, window.innerHeight);
 
-      if (particle.y < -5) {
-        particle.y = window.innerHeight + 5;
-        particle.x = Math.random() * window.innerWidth;
-      }
+particles.forEach((particle) => {  
+  particle.y -= particle.speed;  
 
-      ctx.beginPath();
+  if (particle.y < -5) {  
+    particle.y = window.innerHeight + 5;  
+    particle.x = Math.random() * window.innerWidth;  
+  }  
 
-      ctx.arc(
-        particle.x,
-        particle.y,
-        particle.radius,
-        0,
-        Math.PI * 2
-      );
+  ctx.beginPath();  
 
-      ctx.fillStyle =
-        `rgba(205,166,255,${particle.alpha})`;
+  ctx.arc(  
+    particle.x,  
+    particle.y,  
+    particle.radius,  
+    0,  
+    Math.PI * 2  
+  );  
 
-      ctx.fill();
-    });
+  ctx.fillStyle = `rgba(205,166,255,${particle.alpha})`;  
+  ctx.fill();  
+});  
 
-    animationId = requestAnimationFrame(draw);
-  }
+animationId = requestAnimationFrame(draw);
 
-  function start() {
-    if (!animationId && !document.hidden) {
-      draw();
-    }
-  }
+}
 
-  function stop() {
-    if (animationId) {
-      cancelAnimationFrame(animationId);
-    }
+function start() {
+if (!animationId && !document.hidden) draw();
+}
 
-    animationId = 0;
-  }
+function stop() {
+if (animationId) cancelAnimationFrame(animationId);
+animationId = 0;
+}
 
-  resize();
-  start();
+resize();
+start();
 
-  window.addEventListener("resize", resize);
+window.addEventListener("resize", resize);
 
-  document.addEventListener("visibilitychange", () => {
-    document.hidden ? stop() : start();
-  });
+document.addEventListener("visibilitychange", () => {
+document.hidden ? stop() : start();
+});
 }
 
 /* =========================================
-   START AFTERGLOW
-   ========================================= */
+START AFTERGLOW
+========================================= */
 
 async function startApp() {
-  initParticles();
-  setupOwnerForm();
+initParticles();
+setupOwnerForm();
 
-  // Preserve the floating music player and draggable moon.
-  setupMusicPlayer();
-  setupDraggableMusicButton();
+// Keep the existing floating music player and moon.
+setupMusicPlayer();
+setupDraggableMusicButton();
 
-  setSiteVisible(false);
-  makeGate();
+setSiteVisible(false);
+makeGate();
 
-  const ownerToken =
-    sessionStorage.getItem("afterglow_owner_token");
+const ownerToken = sessionStorage.getItem("afterglow_owner_token");
+const viewToken = sessionStorage.getItem("afterglow_view_token");
 
-  const viewToken =
-    sessionStorage.getItem("afterglow_view_token");
+const sessions = [
+{ token: ownerToken, role: "owner" },
+{ token: viewToken, role: "view" }
+];
 
-  const sessions = [
-    { token: ownerToken, role: "owner" },
-    { token: viewToken, role: "view" }
-  ];
+for (const session of sessions) {
+if (!session.token) continue;
 
-  for (const session of sessions) {
-    if (!session.token) continue;
+try {  
+  currentToken = session.token;  
+  currentRole = session.role;  
 
-    try {
-      currentToken = session.token;
-      currentRole = session.role;
+  await loadMemories();  
 
-      await loadMemories();
+  // Restoring an existing session does NOT play the intro.  
+  setSiteVisible(true);  
 
-      // Restoring a session does not play the intro.
-      setSiteVisible(true);
+  if (currentRole === "owner") {  
+    $("login-form").hidden = true;  
+    $("editor").hidden = false;  
+    setOwnerStatus("Owner access restored.");  
+  }  
 
-      if (currentRole === "owner") {
-        $("login-form").hidden = true;
-        $("editor").hidden = false;
+  return;  
+} catch (error) {  
+  console.error("Could not restore session:", error);  
+}
 
-        setOwnerStatus("Owner access restored.");
-      }
+}
 
-      return;
+currentToken = "";
+currentRole = "";
 
-    } catch (error) {
-      console.error(
-        "Could not restore session:",
-        error
-      );
-    }
-  }
+sessionStorage.removeItem("afterglow_owner_token");
+sessionStorage.removeItem("afterglow_view_token");
 
-  currentToken = "";
-  currentRole = "";
+$("login-form").hidden = false;
+$("editor").hidden = true;
 
-  sessionStorage.removeItem("afterglow_owner_token");
-  sessionStorage.removeItem("afterglow_view_token");
-
-  $("login-form").hidden = false;
-  $("editor").hidden = true;
-
-  setSiteVisible(false);
+setSiteVisible(false);
 }
 
 document.addEventListener("DOMContentLoaded", startApp);
-
 document.documentElement.classList.add("afterglow-ready");
