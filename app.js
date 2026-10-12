@@ -13,16 +13,17 @@ let currentRole = "";
 let selectedMemory = null;
 let storageClient = null;
 
-/* MUSIC PLAYLIST
-   Upload each MP3 to the same GitHub repository as index.html.
-   Add more songs by adding another { title, src } entry.
-*/
+/* MUSIC PLAYLIST */
 const MUSIC_PLAYLIST = [
   { title: "Afterglow", src: "./afterglow-song.mp3" }
 ];
 
 let currentSongIndex = 0;
 let musicControlsOpen = false;
+
+/* =========================================
+   MUSIC PLAYER
+   ========================================= */
 
 function setupMusicPlayer() {
   const audio = $("afterglow-music");
@@ -32,25 +33,27 @@ function setupMusicPlayer() {
   const previous = $("music-previous");
   const details = $("music-details");
   const title = $("music-title");
-  const icon = $("music-icon");
 
   if (!audio || !toggle || !playPause || !next || !previous) return;
   if (audio.dataset.musicReady === "true") return;
-  audio.dataset.musicReady = "true";
 
+  audio.dataset.musicReady = "true";
   audio.loop = false;
   audio.preload = "auto";
   audio.volume = 0.35;
 
   function updatePlaybackUI() {
     const playing = !audio.paused;
+
     playPause.textContent = playing ? "Ⅱ" : "▶";
     playPause.setAttribute(
       "aria-label",
       playing ? "Pause music" : "Play music"
     );
+
     toggle.classList.toggle("is-playing", playing);
-    icon.textContent = playing ? "♫" : "♪";
+
+    // Keep the crescent moon visible during playback.
   }
 
   function loadSong(index, autoplay = false) {
@@ -60,8 +63,11 @@ function setupMusicPlayer() {
       (index + MUSIC_PLAYLIST.length) % MUSIC_PLAYLIST.length;
 
     const song = MUSIC_PLAYLIST[currentSongIndex];
+
     audio.src = song.src;
+
     if (title) title.textContent = song.title;
+
     audio.load();
 
     if (autoplay) {
@@ -76,9 +82,9 @@ function setupMusicPlayer() {
       if (!audio.src) loadSong(currentSongIndex, false);
       await audio.play();
     } catch (error) {
-      // Browsers may block autoplay until the visitor taps the player.
       console.info("Tap the music button to start playback.");
     }
+
     updatePlaybackUI();
   }
 
@@ -91,13 +97,16 @@ function setupMusicPlayer() {
     musicControlsOpen = !musicControlsOpen;
 
     if (details) details.hidden = !musicControlsOpen;
+
     toggle.setAttribute("aria-expanded", String(musicControlsOpen));
+
     toggle.setAttribute(
       "aria-label",
-      musicControlsOpen ? "Close music controls" : "Open music controls"
+      musicControlsOpen
+        ? "Close music controls"
+        : "Open music controls"
     );
 
-    // The first tap opens the controls and tries to start the music.
     if (musicControlsOpen && audio.paused) {
       playMusic();
     }
@@ -118,7 +127,6 @@ function setupMusicPlayer() {
   });
 
   previous.addEventListener("click", () => {
-    // Restart the current song if it has played for more than 3 seconds.
     if (audio.currentTime > 3) {
       audio.currentTime = 0;
       playMusic();
@@ -144,9 +152,247 @@ function setupMusicPlayer() {
   loadSong(0, false);
   updatePlaybackUI();
 
-  // Attempt autoplay; browser restrictions may require a visitor tap.
+  // Browsers may block autoplay until the visitor interacts.
   playMusic();
 }
+
+/* =========================================
+   DRAGGABLE MOON + SAVED POSITION + SPARKLES
+   ========================================= */
+
+function setupDraggableMusicButton() {
+  const player = $("music-player");
+  const button = $("music-toggle");
+
+  if (!player || !button) return;
+  if (button.dataset.dragReady === "true") return;
+
+  button.dataset.dragReady = "true";
+
+  let dragging = false;
+  let moved = false;
+  let startX = 0;
+  let startY = 0;
+  let originX = 0;
+  let originY = 0;
+  let suppressClick = false;
+  let lastSparkleTime = 0;
+
+  const STORAGE_KEY = "afterglow-music-position";
+
+  function keepOnScreen(x, y) {
+    const margin = 4;
+
+    const maxX = Math.max(
+      margin,
+      window.innerWidth - player.offsetWidth - margin
+    );
+
+    const maxY = Math.max(
+      margin,
+      window.innerHeight - player.offsetHeight - margin
+    );
+
+    return {
+      x: Math.min(maxX, Math.max(margin, x)),
+      y: Math.min(maxY, Math.max(margin, y))
+    };
+  }
+
+  function savePosition() {
+    try {
+      localStorage.setItem(
+        STORAGE_KEY,
+        JSON.stringify({
+          x: player.offsetLeft,
+          y: player.offsetTop
+        })
+      );
+    } catch (error) {
+      console.info("Could not save the moon position.");
+    }
+  }
+
+  function restorePosition() {
+    try {
+      const saved = JSON.parse(localStorage.getItem(STORAGE_KEY));
+
+      if (
+        !saved ||
+        !Number.isFinite(saved.x) ||
+        !Number.isFinite(saved.y)
+      ) {
+        return;
+      }
+
+      const position = keepOnScreen(saved.x, saved.y);
+
+      player.style.left = position.x + "px";
+      player.style.top = position.y + "px";
+      player.style.right = "auto";
+      player.style.bottom = "auto";
+    } catch (error) {
+      // Keep the default bottom-right position.
+    }
+  }
+
+  function createSparkle(x, y) {
+    const sparkle = document.createElement("span");
+
+    sparkle.className = "afterglow-sparkle";
+    sparkle.textContent = Math.random() > 0.5 ? "✦" : "✧";
+
+    sparkle.style.left = x + "px";
+    sparkle.style.top = y + "px";
+
+    sparkle.style.setProperty(
+      "--sparkle-x",
+      (Math.random() * 34 - 17) + "px"
+    );
+
+    sparkle.style.setProperty(
+      "--sparkle-y",
+      (Math.random() * 34 - 17) + "px"
+    );
+
+    document.body.appendChild(sparkle);
+
+    sparkle.addEventListener("animationend", () => {
+      sparkle.remove();
+    }, { once: true });
+
+    // Fallback cleanup if animations are disabled.
+    window.setTimeout(() => sparkle.remove(), 900);
+  }
+
+  function createSparkleTrail(x, y) {
+    const now = performance.now();
+
+    // Prevent too many particles on fast movements.
+    if (now - lastSparkleTime < 45) return;
+
+    lastSparkleTime = now;
+
+    createSparkle(
+      x + Math.random() * 14 - 7,
+      y + Math.random() * 14 - 7
+    );
+
+    if (Math.random() > 0.6) {
+      createSparkle(
+        x + Math.random() * 22 - 11,
+        y + Math.random() * 22 - 11
+      );
+    }
+  }
+
+  restorePosition();
+
+  button.addEventListener("pointerdown", (event) => {
+    if (event.button !== undefined && event.button !== 0) return;
+
+    dragging = true;
+    moved = false;
+    suppressClick = false;
+
+    startX = event.clientX;
+    startY = event.clientY;
+
+    const rect = player.getBoundingClientRect();
+
+    originX = rect.left;
+    originY = rect.top;
+
+    // Switch from right/bottom positioning to left/top positioning.
+    player.style.left = originX + "px";
+    player.style.top = originY + "px";
+    player.style.right = "auto";
+    player.style.bottom = "auto";
+
+    player.classList.add("is-dragging");
+
+    try {
+      button.setPointerCapture(event.pointerId);
+    } catch (error) {
+      // Pointer capture may not be available.
+    }
+
+    event.preventDefault();
+  });
+
+  button.addEventListener("pointermove", (event) => {
+    if (!dragging) return;
+
+    const dx = event.clientX - startX;
+    const dy = event.clientY - startY;
+
+    if (Math.abs(dx) > 5 || Math.abs(dy) > 5) {
+      moved = true;
+    }
+
+    if (!moved) return;
+
+    const position = keepOnScreen(
+      originX + dx,
+      originY + dy
+    );
+
+    player.style.left = position.x + "px";
+    player.style.top = position.y + "px";
+
+    // Create a sparkling trail behind the moving moon.
+    createSparkleTrail(
+      event.clientX,
+      event.clientY
+    );
+  });
+
+  function finishDrag() {
+    if (!dragging) return;
+
+    dragging = false;
+    player.classList.remove("is-dragging");
+
+    if (moved) {
+      suppressClick = true;
+      savePosition();
+    }
+  }
+
+  button.addEventListener("pointerup", finishDrag);
+  button.addEventListener("pointercancel", finishDrag);
+
+  // A drag must not accidentally open or close the music controls.
+  button.addEventListener("click", (event) => {
+    if (!suppressClick) return;
+
+    event.preventDefault();
+    event.stopImmediatePropagation();
+
+    suppressClick = false;
+  }, true);
+
+  // Keep the moon visible after screen rotation or resizing.
+  window.addEventListener("resize", () => {
+    const rect = player.getBoundingClientRect();
+
+    const position = keepOnScreen(
+      rect.left,
+      rect.top
+    );
+
+    player.style.left = position.x + "px";
+    player.style.top = position.y + "px";
+    player.style.right = "auto";
+    player.style.bottom = "auto";
+
+    savePosition();
+  });
+}
+
+/* =========================================
+   MEMORY DATA
+   ========================================= */
 
 const defaultMemories = Array.from({ length: 24 }, (_, i) => ({
   id: i + 1,
@@ -323,6 +569,10 @@ async function viewerLogin(event) {
   }
 }
 
+/* =========================================
+   OWNER LOGIN
+   ========================================= */
+
 function setupOwnerForm() {
   const form = $("login-form");
   const email = $("owner-email");
@@ -445,11 +695,16 @@ function ownerLogout() {
   $("viewer-error").textContent = "";
 }
 
+/* =========================================
+   MEMORY GALLERY
+   ========================================= */
+
 function normalizeMemories(rows) {
   const result = defaultMemories.map((memory) => ({ ...memory }));
 
   rows.forEach((row, index) => {
     const numericId = Number(row.id);
+
     const targetIndex =
       Number.isInteger(numericId) && numericId >= 1 && numericId <= 24
         ? numericId - 1
@@ -528,7 +783,8 @@ function renderGallery() {
 
     const kicker = document.createElement("p");
     kicker.className = "memory-kicker";
-    kicker.textContent = `FRAGMENT ${String(index + 1).padStart(2, "0")}`;
+    kicker.textContent =
+      `FRAGMENT ${String(index + 1).padStart(2, "0")}`;
 
     const title = document.createElement("h3");
     title.className = "memory-title";
@@ -539,7 +795,8 @@ function renderGallery() {
 
     const body = document.createElement("p");
     body.className = "memory-body";
-    body.textContent = memory.body || "A space waiting for a memory to be written.";
+    body.textContent =
+      memory.body || "A space waiting for a memory to be written.";
 
     copy.append(kicker, title, divider, body);
     panel.append(visual, copy);
@@ -573,7 +830,9 @@ function populateMemorySelect() {
   memories.forEach((memory, index) => {
     const option = document.createElement("option");
     option.value = String(index);
-    option.textContent = `${String(index + 1).padStart(2, "0")} — ${memory.title}`;
+    option.textContent =
+      `${String(index + 1).padStart(2, "0")} — ${memory.title}`;
+
     select.appendChild(option);
   });
 
@@ -594,6 +853,10 @@ function chooseMemory() {
   showMessage("");
 }
 
+/* =========================================
+   SAVE AND REMOVE MEMORY PHOTOS
+   ========================================= */
+
 async function saveMemory() {
   if (currentRole !== "owner" || !selectedMemory) {
     showMessage("Owner access is required.", true);
@@ -613,7 +876,10 @@ async function saveMemory() {
       }
 
       const allowedTypes = [
-        "image/jpeg", "image/png", "image/webp", "image/gif"
+        "image/jpeg",
+        "image/png",
+        "image/webp",
+        "image/gif"
       ];
 
       if (!allowedTypes.includes(file.type)) {
@@ -714,6 +980,10 @@ async function removeImage() {
   }
 }
 
+/* =========================================
+   BACKGROUND PARTICLES
+   ========================================= */
+
 function initParticles() {
   const canvas = $("particles");
   if (!canvas) return;
@@ -726,10 +996,13 @@ function initParticles() {
 
   function resize() {
     const ratio = window.devicePixelRatio || 1;
+
     canvas.width = window.innerWidth * ratio;
     canvas.height = window.innerHeight * ratio;
+
     canvas.style.width = `${window.innerWidth}px`;
     canvas.style.height = `${window.innerHeight}px`;
+
     ctx.setTransform(ratio, 0, 0, ratio, 0, 0);
   }
 
@@ -743,7 +1016,9 @@ function initParticles() {
     };
   }
 
-  for (let i = 0; i < 55; i++) particles.push(createParticle());
+  for (let i = 0; i < 55; i++) {
+    particles.push(createParticle());
+  }
 
   function draw() {
     ctx.clearRect(0, 0, window.innerWidth, window.innerHeight);
@@ -757,7 +1032,15 @@ function initParticles() {
       }
 
       ctx.beginPath();
-      ctx.arc(particle.x, particle.y, particle.radius, 0, Math.PI * 2);
+
+      ctx.arc(
+        particle.x,
+        particle.y,
+        particle.radius,
+        0,
+        Math.PI * 2
+      );
+
       ctx.fillStyle = `rgba(205,166,255,${particle.alpha})`;
       ctx.fill();
     });
@@ -776,6 +1059,7 @@ function initParticles() {
 
   resize();
   start();
+
   window.addEventListener("resize", resize);
 
   document.addEventListener("visibilitychange", () => {
@@ -783,10 +1067,17 @@ function initParticles() {
   });
 }
 
+/* =========================================
+   START AFTERGLOW
+   ========================================= */
+
 async function startApp() {
   initParticles();
   setupOwnerForm();
+
+  // Initialize music and the draggable crescent moon.
   setupMusicPlayer();
+  setupDraggableMusicButton();
 
   setSiteVisible(false);
   makeGate();
