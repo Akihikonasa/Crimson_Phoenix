@@ -20,8 +20,65 @@
 </head>
 
 <body>
+  <!-- Background particles -->
   <canvas id="particles" aria-hidden="true"></canvas>
 
+  <!-- Purple galaxy intro: shown after successful viewer login -->
+  <div
+    id="afterglow-intro"
+    class="afterglow-intro"
+    aria-hidden="true"
+    hidden
+  >
+    <div class="intro-galaxy">
+      <div class="intro-nebula intro-nebula-one"></div>
+      <div class="intro-nebula intro-nebula-two"></div>
+      <div class="intro-nebula intro-nebula-three"></div>
+
+      <div class="intro-orbit intro-orbit-one"></div>
+      <div class="intro-orbit intro-orbit-two"></div>
+      <div class="intro-orbit intro-orbit-three"></div>
+
+      <div class="intro-core">
+        <div class="intro-core-glow"></div>
+        <span class="intro-star">✦</span>
+      </div>
+
+      <div class="intro-sparkles" aria-hidden="true">
+        <span>✧</span>
+        <span>✦</span>
+        <span>·</span>
+        <span>✧</span>
+        <span>✦</span>
+        <span>·</span>
+        <span>✧</span>
+        <span>✦</span>
+        <span>·</span>
+        <span>✧</span>
+        <span>✦</span>
+        <span>·</span>
+      </div>
+    </div>
+
+    <div class="intro-copy">
+      <p class="intro-eyebrow">A UNIVERSE OF MEMORIES</p>
+      <h1 class="intro-title">AFTERGLOW<span>✦</span></h1>
+      <p class="intro-subtitle">Some moments become eternal.</p>
+      <div class="intro-progress">
+        <span></span>
+      </div>
+    </div>
+
+    <audio
+      id="afterglow-intro-music"
+      preload="auto"
+      playsinline
+    >
+      <source src="./borderline-slowed.mp3" type="audio/mpeg">
+    </audio>
+  </div>
+
+  <!-- Main website header -->
   <header class="site-header">
     <a class="brand" href="#home">AFTERGLOW<span>✦</span></a>
 
@@ -31,6 +88,7 @@
   </header>
 
   <main>
+    <!-- Hero section -->
     <section id="home" class="hero">
       <div class="hero-orb" aria-hidden="true"></div>
 
@@ -50,6 +108,7 @@
       <div class="phoenix-mark" aria-hidden="true">♨</div>
     </section>
 
+    <!-- Memory archive -->
     <section id="memories" class="memories-section">
       <div class="section-heading">
         <p class="eyebrow">FRAGMENTS OF FOREVER</p>
@@ -62,6 +121,7 @@
       </div>
     </section>
 
+    <!-- Closing section -->
     <section class="closing-section">
       <div class="closing-line"></div>
 
@@ -73,12 +133,13 @@
     </section>
   </main>
 
+  <!-- Footer -->
   <footer class="site-footer">
     <span>AFTERGLOW ✦</span>
     <span>Every memory leaves a light.</span>
   </footer>
 
-  <!-- Floating music player -->
+  <!-- Existing floating music player -->
   <audio id="afterglow-music" preload="auto"></audio>
 
   <div id="music-player" class="music-player">
@@ -237,4 +298,4 @@
     </p>
   </noscript>
 </body>
-</html>
+      </html>
