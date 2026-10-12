@@ -10,7 +10,11 @@
 
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@400;500;600;700&family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet">
+
+  <link
+    href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@400;500;600;700&family=Inter:wght@300;400;500;600&display=swap"
+    rel="stylesheet"
+  >
 
   <link rel="stylesheet" href="styles.css">
 
@@ -23,14 +27,20 @@
   <!-- Background particles -->
   <canvas id="particles" aria-hidden="true"></canvas>
 
-  <!-- Purple galaxy intro: shown after successful viewer login -->
+  <!--
+    DREAMY PURPLE GALAXY INTRO
+
+    Displayed after a successful viewer login.
+    The intro duration is controlled by app.js.
+    The current app.js version runs the intro for 19 seconds.
+  -->
   <div
     id="afterglow-intro"
     class="afterglow-intro"
     aria-hidden="true"
     hidden
   >
-    <div class="intro-galaxy">
+    <div class="intro-galaxy" aria-hidden="true">
       <div class="intro-nebula intro-nebula-one"></div>
       <div class="intro-nebula intro-nebula-two"></div>
       <div class="intro-nebula intro-nebula-three"></div>
@@ -44,7 +54,7 @@
         <span class="intro-star">✦</span>
       </div>
 
-      <div class="intro-sparkles" aria-hidden="true">
+      <div class="intro-sparkles">
         <span>✧</span>
         <span>✦</span>
         <span>·</span>
@@ -62,13 +72,30 @@
 
     <div class="intro-copy">
       <p class="intro-eyebrow">A UNIVERSE OF MEMORIES</p>
-      <h1 class="intro-title">AFTERGLOW<span>✦</span></h1>
-      <p class="intro-subtitle">Some moments become eternal.</p>
-      <div class="intro-progress">
+
+      <h1 class="intro-title">
+        AFTERGLOW<span>✦</span>
+      </h1>
+
+      <p class="intro-subtitle">
+        Some moments become eternal.
+      </p>
+
+      <div
+        class="intro-progress"
+        role="progressbar"
+        aria-label="Introduction progress"
+        aria-valuemin="0"
+        aria-valuemax="100"
+      >
         <span></span>
       </div>
     </div>
 
+    <!--
+      Keep borderline-slowed.mp3 in the repository root
+      if you want to use this music for the intro.
+    -->
     <audio
       id="afterglow-intro-music"
       preload="auto"
@@ -80,9 +107,15 @@
 
   <!-- Main website header -->
   <header class="site-header">
-    <a class="brand" href="#home">AFTERGLOW<span>✦</span></a>
+    <a class="brand" href="#home">
+      AFTERGLOW<span>✦</span>
+    </a>
 
-    <button id="owner-button" class="owner-button" type="button">
+    <button
+      id="owner-button"
+      class="owner-button"
+      type="button"
+    >
       Owner Login
     </button>
   </header>
@@ -92,9 +125,14 @@
     <section id="home" class="hero">
       <div class="hero-orb" aria-hidden="true"></div>
 
-      <p class="eyebrow">A LITTLE UNIVERSE OF MEMORIES</p>
+      <p class="eyebrow">
+        A LITTLE UNIVERSE OF MEMORIES
+      </p>
 
-      <h1>Some moments<br>become <em>eternal.</em></h1>
+      <h1>
+        Some moments<br>
+        become <em>eternal.</em>
+      </h1>
 
       <p class="hero-description">
         A place for the moments, words, and feelings
@@ -112,12 +150,20 @@
     <section id="memories" class="memories-section">
       <div class="section-heading">
         <p class="eyebrow">FRAGMENTS OF FOREVER</p>
-        <h2>The Memory <em>Archive</em></h2>
-        <p>Twenty-four little windows into a world of memories.</p>
+
+        <h2>
+          The Memory <em>Archive</em>
+        </h2>
+
+        <p>
+          Twenty-four little windows into a world of memories.
+        </p>
       </div>
 
       <div id="gallery" class="gallery">
-        <div class="loading-message">Gathering the memories…</div>
+        <div class="loading-message">
+          Gathering the memories…
+        </div>
       </div>
     </section>
 
@@ -125,11 +171,18 @@
     <section class="closing-section">
       <div class="closing-line"></div>
 
-      <p class="eyebrow">UNTIL THE STARS FORGET TO SHINE</p>
+      <p class="eyebrow">
+        UNTIL THE STARS FORGET TO SHINE
+      </p>
 
-      <h2>Some things are<br><em>worth remembering.</em></h2>
+      <h2>
+        Some things are<br>
+        <em>worth remembering.</em>
+      </h2>
 
-      <p class="closing-note">Made of moments. Kept in Afterglow.</p>
+      <p class="closing-note">
+        Made of moments. Kept in Afterglow.
+      </p>
     </section>
   </main>
 
@@ -145,7 +198,10 @@
   <div id="music-player" class="music-player">
     <div id="music-details" class="music-details" hidden>
       <span class="music-label">NOW PLAYING</span>
-      <span id="music-title" class="music-title">Afterglow</span>
+
+      <span id="music-title" class="music-title">
+        Afterglow
+      </span>
 
       <div class="music-controls">
         <button
@@ -174,6 +230,7 @@
       type="button"
       aria-label="Open music controls"
       aria-expanded="false"
+      aria-controls="music-details"
     >
       <span id="music-icon" aria-hidden="true">☾</span>
       <span class="music-halo" aria-hidden="true"></span>
@@ -181,8 +238,15 @@
   </div>
 
   <!-- Owner login and editing panel -->
-  <div id="owner-modal" class="modal" aria-hidden="true">
-    <div class="modal-backdrop" data-close-modal></div>
+  <div
+    id="owner-modal"
+    class="modal"
+    aria-hidden="true"
+  >
+    <div
+      class="modal-backdrop"
+      data-close-modal
+    ></div>
 
     <section
       class="modal-card"
@@ -197,16 +261,22 @@
         aria-label="Close"
       >×</button>
 
-      <p class="eyebrow">THE KEEPER'S CORNER</p>
+      <p class="eyebrow">
+        THE KEEPER'S CORNER
+      </p>
 
-      <h2 id="modal-title">Owner <em>Access</em></h2>
+      <h2 id="modal-title">
+        Owner <em>Access</em>
+      </h2>
 
       <p id="owner-status" class="owner-status">
         Sign in to manage your memories.
       </p>
 
+      <!-- Owner authentication form -->
       <form id="login-form">
         <label for="owner-email">Email</label>
+
         <input
           id="owner-email"
           type="email"
@@ -216,6 +286,7 @@
         >
 
         <label for="owner-password">Password</label>
+
         <input
           id="owner-password"
           type="password"
@@ -229,22 +300,32 @@
         </button>
       </form>
 
+      <!-- Owner memory editor -->
       <div id="editor" class="editor" hidden>
         <div class="editor-divider"></div>
 
         <h3>Edit a memory</h3>
 
-        <label for="memory-select">Choose a panel</label>
+        <label for="memory-select">
+          Choose a panel
+        </label>
+
         <select id="memory-select"></select>
 
-        <label for="memory-title">Memory title</label>
+        <label for="memory-title">
+          Memory title
+        </label>
+
         <input
           id="memory-title"
           maxlength="120"
           placeholder="Give this memory a title"
         >
 
-        <label for="memory-body">Your words</label>
+        <label for="memory-body">
+          Your words
+        </label>
+
         <textarea
           id="memory-body"
           rows="6"
@@ -252,7 +333,10 @@
           placeholder="Write what you want to remember…"
         ></textarea>
 
-        <label for="memory-image">Upload or replace photo</label>
+        <label for="memory-image">
+          Upload or replace photo
+        </label>
+
         <input
           id="memory-image"
           type="file"
@@ -260,27 +344,33 @@
         >
 
         <p class="field-note">
-          Maximum image size: 5 MB. Uploaded photos are publicly viewable
-          through their image links.
+          Maximum image size: 5 MB. Uploaded photos are publicly
+          viewable through their image links.
         </p>
 
         <button
           id="save-memory"
           class="primary-button"
           type="button"
-        >Save changes</button>
+        >
+          Save changes
+        </button>
 
         <button
           id="remove-image"
           class="secondary-button"
           type="button"
-        >Remove photo</button>
+        >
+          Remove photo
+        </button>
 
         <button
           id="logout-button"
           class="secondary-button"
           type="button"
-        >Sign out</button>
+        >
+          Sign out
+        </button>
       </div>
 
       <p
@@ -292,6 +382,7 @@
     </section>
   </div>
 
+  <!-- No-JavaScript message -->
   <noscript>
     <p class="noscript-message">
       Please enable JavaScript to view the memory archive.
