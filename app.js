@@ -15,7 +15,7 @@ let storageClient = null;
 
 /* MUSIC PLAYLIST */
 const MUSIC_PLAYLIST = [
-  { title: "Afterglow", src: "./afterglow-song.mp3" }
+  { title: "Dreamy Night", src: "./dreamy-night.mp3" }
 ];
 
 let currentSongIndex = 0;
