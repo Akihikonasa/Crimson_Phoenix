@@ -250,12 +250,9 @@ function setupMusicPlayer() {
     updatePlaybackUI();
   });
 
+    
   loadSong(0, false);
   updatePlaybackUI();
-
-  // Existing music player behavior is preserved.
-  playMusic();
-}
 
 /* =========================================
    DRAGGABLE MOON + SAVED POSITION + SPARKLES
