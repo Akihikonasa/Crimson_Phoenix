@@ -250,7 +250,6 @@ function setupMusicPlayer() {
     updatePlaybackUI();
   });
 
-    
   loadSong(0, false);
   updatePlaybackUI();
 
