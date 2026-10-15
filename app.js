@@ -1210,7 +1210,9 @@ function initParticles() {
 async function startApp() {
   initParticles();
   setupOwnerForm();
+  setupMusicPlayer();
   setupDraggableMusicButton();
+
 
   // Do not start the background playlist automatically.
   // The intro music starts after a successful viewer login.
