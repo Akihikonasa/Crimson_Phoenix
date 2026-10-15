@@ -32,6 +32,7 @@ let introPromise = null;
 let introPlayed = false;
 
 const INTRO_MUSIC_PATH = "assets/afterglow-intro-music.mp3";
+const INTRO_DURATION = 38000;
 
 const INTRO_SCENES = [
   { time: 0.3, text: "THE MOMENT WHERE EVERYTHING SPLITS AND VANISHES." },
@@ -187,6 +188,33 @@ function installIntroStyles() {
       animation: agFlash .7s ease-out;
     }
 
+    #afterglow-intro .ag-music-button {
+      position: absolute;
+      z-index: 5;
+      left: 50%;
+      bottom: max(28px, env(safe-area-inset-bottom));
+      transform: translateX(-50%);
+      max-width: 90%;
+      padding: 13px 19px;
+      border: 1px solid #d8b5f5aa;
+      border-radius: 999px;
+      background: #241435dd;
+      color: #f5e9ff;
+      font: 11px Arial, sans-serif;
+      letter-spacing: 2px;
+      text-align: center;
+      cursor: pointer;
+      box-shadow: 0 0 25px #b58aff22;
+    }
+
+    #afterglow-intro .ag-music-button:active {
+      background: #49305f;
+    }
+
+    #afterglow-intro .ag-music-button[hidden] {
+      display: none;
+    }
+
     @keyframes agNebula {
       from { transform: translate(-3%, -2%) scale(1); }
       to { transform: translate(3%, 2%) scale(1.12); }
@@ -228,6 +256,7 @@ function getIntroAudio() {
     audio.id = "afterglow-intro-music";
     audio.preload = "auto";
     audio.src = INTRO_MUSIC_PATH;
+    audio.setAttribute("playsinline", "");
     document.body.appendChild(audio);
   }
 
@@ -240,14 +269,16 @@ function startAfterglowIntro() {
   if (introPlayed) return Promise.resolve();
   if (introPromise) return introPromise;
 
-  introPromise = new Promise(async (resolve) => {
+  introPromise = new Promise((resolve) => {
     installIntroStyles();
 
     const audio = getIntroAudio();
+
     let finished = false;
-    let animationFrame = 0;
+    let intervalId = 0;
+    let finishTimer = 0;
     let sceneIndex = -1;
-    let fallbackTimer = 0;
+    let startTime = 0;
 
     const intro = document.createElement("section");
     intro.id = "afterglow-intro";
@@ -258,10 +289,16 @@ function startAfterglowIntro() {
       <div class="ag-nebula"></div>
       <div class="ag-stars"></div>
       <div class="ag-orbit"></div>
+
       <div class="ag-copy">
         <p class="ag-line"></p>
         <div class="ag-sub"></div>
       </div>
+
+      <button class="ag-music-button" type="button">
+        ✦ TAP TO ENABLE MUSIC ✦
+      </button>
+
       <div class="ag-flash"></div>
     `;
 
@@ -270,27 +307,11 @@ function startAfterglowIntro() {
     const line = intro.querySelector(".ag-line");
     const sub = intro.querySelector(".ag-sub");
     const flash = intro.querySelector(".ag-flash");
-
-    function finishIntro() {
-      if (finished) return;
-      finished = true;
-
-      cancelAnimationFrame(animationFrame);
-      window.clearTimeout(fallbackTimer);
-
-      audio.removeEventListener("ended", finishIntro);
-      intro.classList.add("ag-leaving");
-
-      window.setTimeout(() => {
-        intro.remove();
-        introPlayed = true;
-        introPromise = null;
-        resolve();
-      }, 1250);
-    }
+    const musicButton = intro.querySelector(".ag-music-button");
 
     function showScene(index) {
-      if (index < 0 || index === sceneIndex) return;
+      if (finished || index < 0 || index === sceneIndex) return;
+
       sceneIndex = index;
 
       line.classList.remove("ag-visible");
@@ -302,29 +323,108 @@ function startAfterglowIntro() {
       line.textContent = INTRO_SCENES[index].text;
       sub.textContent = INTRO_SCENES[index].sub || "";
 
-      requestAnimationFrame(() => line.classList.add("ag-visible"));
+      requestAnimationFrame(() => {
+        if (!finished) line.classList.add("ag-visible");
+      });
+
       flash.classList.add("ag-flashing");
     }
 
-    function syncScene() {
+    function updateIntro() {
       if (finished) return;
 
-      const time = Number(audio.currentTime) || 0;
+      const elapsed = (performance.now() - startTime) / 1000;
       let targetIndex = -1;
 
       for (let i = 0; i < INTRO_SCENES.length; i++) {
-        if (time >= INTRO_SCENES[i].time) targetIndex = i;
+        if (elapsed >= INTRO_SCENES[i].time) {
+          targetIndex = i;
+        }
       }
 
       showScene(targetIndex);
 
-      if (!audio.paused && !audio.ended) {
-        animationFrame = requestAnimationFrame(syncScene);
+      if (elapsed >= INTRO_DURATION / 1000) {
+        finishIntro();
       }
     }
 
+    function finishIntro() {
+      if (finished) return;
+      finished = true;
+
+      window.clearInterval(intervalId);
+      window.clearTimeout(finishTimer);
+
+      musicButton.disabled = true;
+      audio.pause();
+
+      intro.classList.add("ag-leaving");
+      intro.setAttribute("aria-hidden", "true");
+
+      window.setTimeout(() => {
+        intro.remove();
+        introPlayed = true;
+        introPromise = null;
+        resolve();
+      }, 1250);
+    }
+
+    async function tryPlayIntroMusic() {
+      if (finished) return;
+
+      musicButton.textContent = "✦ STARTING MUSIC… ✦";
+
+      try {
+        // Synchronize the song with the intro's current position.
+        const elapsed = Math.max(0, (performance.now() - startTime) / 1000);
+
+        if (Number.isFinite(audio.duration) && audio.duration > 0) {
+          audio.currentTime = Math.min(elapsed, Math.max(0, audio.duration - 0.1));
+        } else {
+          audio.currentTime = elapsed;
+        }
+
+        await audio.play();
+
+        if (finished) {
+          audio.pause();
+          return;
+        }
+
+        musicButton.hidden = true;
+      } catch (error) {
+        console.warn("Intro music could not play:", error);
+        musicButton.hidden = false;
+        musicButton.textContent = "✦ TAP TO TRY MUSIC AGAIN ✦";
+      }
+    }
+
+    musicButton.addEventListener("click", tryPlayIntroMusic);
+
+    audio.addEventListener("error", () => {
+      if (finished) return;
+
+      musicButton.hidden = false;
+      musicButton.textContent = "MUSIC UNAVAILABLE — CONTINUE";
+      console.warn("Intro music file could not be loaded:", INTRO_MUSIC_PATH);
+    });
+
+    // The intro timer starts independently of audio playback.
+    startTime = performance.now();
+
     intro.classList.add("ag-active");
 
+    // Show the first scene immediately so the screen is never blank.
+    showScene(0);
+
+    // Keep advancing the text even when audio is blocked or missing.
+    intervalId = window.setInterval(updateIntro, 100);
+
+    // Safety timer: the intro cannot remain stuck indefinitely.
+    finishTimer = window.setTimeout(finishIntro, INTRO_DURATION);
+
+    // Try autoplay. If the browser blocks it, the button remains visible.
     audio.pause();
 
     try {
@@ -332,17 +432,9 @@ function startAfterglowIntro() {
     } catch (_) {}
 
     audio.volume = 1;
+    audio.load();
 
-    audio.addEventListener("ended", finishIntro, { once: true });
-
-    try {
-      await audio.play();
-      syncScene();
-    } catch (error) {
-      console.warn("Intro audio could not play:", error);
-      showScene(0);
-      fallbackTimer = window.setTimeout(finishIntro, 38000);
-    }
+    tryPlayIntroMusic();
   });
 
   return introPromise;
@@ -447,7 +539,6 @@ function setupMusicPlayer() {
 
   loadSong(0, false);
   updatePlaybackUI();
-  playMusic();
 }
 
 /* =========================================
@@ -1212,8 +1303,8 @@ async function startApp() {
   setupOwnerForm();
   setupDraggableMusicButton();
 
-  // Do not start the background playlist automatically.
-  // The intro music starts after a successful viewer login.
+  // The background playlist does not autoplay.
+  // Intro music is attempted after successful viewer login.
   setSiteVisible(false);
   makeGate();
 
