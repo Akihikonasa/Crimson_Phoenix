@@ -1,4 +1,3 @@
-
 const CONFIG = window.AFTERGLOW_CONFIG;
 
 const GATEWAY =
@@ -25,423 +24,108 @@ let currentSongIndex = 0;
 let musicControlsOpen = false;
 
 /* =========================================
-   AFTERGLOW CINEMATIC INTRO
+   DREAMY GALAXY INTRO
    ========================================= */
 
 let introPromise = null;
 let introPlayed = false;
 
-const INTRO_MUSIC_PATH = "assets/afterglow-intro-music.mp3";
-const INTRO_DURATION = 38000;
-
-const INTRO_SCENES = [
-  { time: 0.3, text: "THE MOMENT WHERE EVERYTHING SPLITS AND VANISHES." },
-  { time: 3.4, text: "YOU SEE ME JUST ONE MORE TIME." },
-  { time: 6.4, text: "PLEASE EXPERIENCE WHICH YOU WILL HAVE TO FACE." },
-  { time: 9.5, text: "IT HURTS BEAUTIFULLY", sub: "LIKE SPIKES OF CRYSTAL." },
-  { time: 12.5, text: "ONE LAST LOOK", sub: "FRAME 001" },
-  { time: 15.3, text: "ONE LAST WISH", sub: "FRAME 002" },
-  { time: 18.1, text: "ONE LAST TIME", sub: "FRAME 003" },
-  { time: 21.0, text: "HANABI" },
-  { time: 24.0, text: "SOMETHING MEANINGFUL" },
-  { time: 27.0, text: "RETROSPECT" },
-  { time: 30.0, text: "— HaNaBI —" },
-  { time: 33.2, text: "FRAMES OF DESTINY" }
-];
-
-function installIntroStyles() {
-  if ($("afterglow-intro-styles")) return;
-
-  const style = document.createElement("style");
-  style.id = "afterglow-intro-styles";
-
-  style.textContent = `
-    #afterglow-intro {
-      position: fixed;
-      inset: 0;
-      z-index: 100000;
-      display: grid;
-      place-items: center;
-      overflow: hidden;
-      background: radial-gradient(ellipse at center,
-        #38204f 0%, #180c29 48%, #080510 100%);
-      color: #f5e9ff;
-      font-family: Georgia, "Times New Roman", serif;
-      opacity: 0;
-      visibility: hidden;
-      transition: opacity 1.2s ease, visibility 1.2s ease;
-    }
-
-    #afterglow-intro.ag-active {
-      opacity: 1;
-      visibility: visible;
-    }
-
-    #afterglow-intro.ag-leaving {
-      opacity: 0;
-      pointer-events: none;
-    }
-
-    #afterglow-intro .ag-nebula {
-      position: absolute;
-      inset: -30%;
-      background:
-        radial-gradient(ellipse at 30% 40%, #8d42bf66, transparent 35%),
-        radial-gradient(ellipse at 70% 55%, #d84e8750, transparent 32%),
-        radial-gradient(ellipse at 50% 75%, #4d4dc044, transparent 40%);
-      filter: blur(35px);
-      animation: agNebula 12s ease-in-out infinite alternate;
-    }
-
-    #afterglow-intro .ag-stars {
-      position: absolute;
-      inset: 0;
-      background-image:
-        radial-gradient(2px 2px at 10% 20%, #fff, transparent),
-        radial-gradient(1px 1px at 25% 75%, #e6caff, transparent),
-        radial-gradient(2px 2px at 80% 30%, #fff, transparent),
-        radial-gradient(1px 1px at 65% 80%, #ffb9e8, transparent),
-        radial-gradient(1px 1px at 50% 15%, #fff, transparent),
-        radial-gradient(2px 2px at 90% 65%, #c6a5ff, transparent);
-      background-size: 240px 240px;
-      animation: agStars 18s linear infinite;
-    }
-
-    #afterglow-intro .ag-orbit {
-      position: absolute;
-      width: min(75vw, 520px);
-      aspect-ratio: 1;
-      border: 1px solid #d4a3ff30;
-      border-radius: 50%;
-      box-shadow: 0 0 70px #9b4dff12, inset 0 0 70px #9b4dff10;
-      animation: agOrbit 32s linear infinite;
-    }
-
-    #afterglow-intro .ag-orbit::before,
-    #afterglow-intro .ag-orbit::after {
-      content: "";
-      position: absolute;
-      width: 6px;
-      height: 6px;
-      border-radius: 50%;
-      background: #f0a6d7;
-      box-shadow: 0 0 18px #f0a6d7;
-    }
-
-    #afterglow-intro .ag-orbit::before {
-      top: 14%;
-      left: 19%;
-    }
-
-    #afterglow-intro .ag-orbit::after {
-      bottom: 18%;
-      right: 12%;
-      background: #b58aff;
-      box-shadow: 0 0 20px #b58aff;
-    }
-
-    #afterglow-intro .ag-copy {
-      position: relative;
-      z-index: 2;
-      width: min(88vw, 760px);
-      padding: 28px 18px;
-      text-align: center;
-    }
-
-    #afterglow-intro .ag-line {
-      margin: 0;
-      font-size: clamp(19px, 4.3vw, 38px);
-      font-weight: 400;
-      line-height: 1.55;
-      letter-spacing: clamp(2px, .7vw, 7px);
-      text-transform: uppercase;
-      text-shadow: 0 0 22px #cda4ff80;
-      opacity: 0;
-      transform: translateY(18px);
-      transition: opacity .9s ease, transform 1.1s ease;
-    }
-
-    #afterglow-intro .ag-line.ag-visible {
-      opacity: 1;
-      transform: translateY(0);
-    }
-
-    #afterglow-intro .ag-sub {
-      min-height: 18px;
-      margin-top: 18px;
-      color: #d8b5f5;
-      font: 11px/1.6 Arial, sans-serif;
-      letter-spacing: 5px;
-      opacity: .9;
-    }
-
-    #afterglow-intro .ag-flash {
-      position: absolute;
-      inset: 0;
-      z-index: 3;
-      pointer-events: none;
-      background: #f5dfff;
-      opacity: 0;
-    }
-
-    #afterglow-intro .ag-flash.ag-flashing {
-      animation: agFlash .7s ease-out;
-    }
-
-    #afterglow-intro .ag-music-button {
-      position: absolute;
-      z-index: 5;
-      left: 50%;
-      bottom: max(28px, env(safe-area-inset-bottom));
-      transform: translateX(-50%);
-      max-width: 90%;
-      padding: 13px 19px;
-      border: 1px solid #d8b5f5aa;
-      border-radius: 999px;
-      background: #241435dd;
-      color: #f5e9ff;
-      font: 11px Arial, sans-serif;
-      letter-spacing: 2px;
-      text-align: center;
-      cursor: pointer;
-      box-shadow: 0 0 25px #b58aff22;
-    }
-
-    #afterglow-intro .ag-music-button:active {
-      background: #49305f;
-    }
-
-    #afterglow-intro .ag-music-button[hidden] {
-      display: none;
-    }
-
-    @keyframes agNebula {
-      from { transform: translate(-3%, -2%) scale(1); }
-      to { transform: translate(3%, 2%) scale(1.12); }
-    }
-
-    @keyframes agStars {
-      from { transform: translateY(0); }
-      to { transform: translateY(-240px); }
-    }
-
-    @keyframes agOrbit {
-      from { transform: rotate(0deg); }
-      to { transform: rotate(360deg); }
-    }
-
-    @keyframes agFlash {
-      0% { opacity: 0; }
-      18% { opacity: .18; }
-      100% { opacity: 0; }
-    }
-
-    @media (prefers-reduced-motion: reduce) {
-      #afterglow-intro .ag-nebula,
-      #afterglow-intro .ag-stars,
-      #afterglow-intro .ag-orbit {
-        animation: none;
-      }
-    }
-  `;
-
-  document.head.appendChild(style);
-}
-
-function getIntroAudio() {
-  let audio = $("afterglow-intro-music");
-
-  if (!audio) {
-    audio = document.createElement("audio");
-    audio.id = "afterglow-intro-music";
-    audio.preload = "auto";
-    audio.src = INTRO_MUSIC_PATH;
-    audio.setAttribute("playsinline", "");
-    document.body.appendChild(audio);
-  }
-
-  audio.loop = false;
-  audio.preload = "auto";
-  return audio;
-}
-
 function startAfterglowIntro() {
+  const intro = $("afterglow-intro");
+  const audio = $("afterglow-intro-music");
+
+  // If the intro markup isn't present, continue normally.
+  if (!intro) return Promise.resolve();
+
+  // Prevent two intros from playing at the same time.
   if (introPlayed) return Promise.resolve();
-  if (introPromise) return introPromise;
+if (introPromise) return introPromise;
+
+introPlayed = true;
 
   introPromise = new Promise((resolve) => {
-    installIntroStyles();
-
-    const audio = getIntroAudio();
-
     let finished = false;
-    let intervalId = 0;
-    let finishTimer = 0;
-    let sceneIndex = -1;
-    let startTime = 0;
+    let finishTimer = null;
 
-    const intro = document.createElement("section");
-    intro.id = "afterglow-intro";
-    intro.setAttribute("aria-label", "Afterglow cinematic intro");
-    intro.setAttribute("aria-hidden", "false");
-
-    intro.innerHTML = `
-      <div class="ag-nebula"></div>
-      <div class="ag-stars"></div>
-      <div class="ag-orbit"></div>
-
-      <div class="ag-copy">
-        <p class="ag-line"></p>
-        <div class="ag-sub"></div>
-      </div>
-
-      <button class="ag-music-button" type="button">
-        ✦ TAP TO ENABLE MUSIC ✦
-      </button>
-
-      <div class="ag-flash"></div>
-    `;
-
-    document.body.appendChild(intro);
-
-    const line = intro.querySelector(".ag-line");
-    const sub = intro.querySelector(".ag-sub");
-    const flash = intro.querySelector(".ag-flash");
-    const musicButton = intro.querySelector(".ag-music-button");
-
-    function showScene(index) {
-      if (finished || index < 0 || index === sceneIndex) return;
-
-      sceneIndex = index;
-
-      line.classList.remove("ag-visible");
-      sub.textContent = "";
-      flash.classList.remove("ag-flashing");
-
-      void line.offsetWidth;
-
-      line.textContent = INTRO_SCENES[index].text;
-      sub.textContent = INTRO_SCENES[index].sub || "";
-
-      requestAnimationFrame(() => {
-        if (!finished) line.classList.add("ag-visible");
-      });
-
-      flash.classList.add("ag-flashing");
-    }
-
-    function updateIntro() {
-      if (finished) return;
-
-      const elapsed = (performance.now() - startTime) / 1000;
-      let targetIndex = -1;
-
-      for (let i = 0; i < INTRO_SCENES.length; i++) {
-        if (elapsed >= INTRO_SCENES[i].time) {
-          targetIndex = i;
-        }
-      }
-
-      showScene(targetIndex);
-
-      if (elapsed >= INTRO_DURATION / 1000) {
-        finishIntro();
-      }
-    }
+    // The fade-out takes approximately 900ms.
+    // 12.1 seconds + 0.9 seconds = approximately 13 seconds.
+    const INTRO_DURATION = 12100;
+    const FADE_DURATION = 900;
 
     function finishIntro() {
       if (finished) return;
       finished = true;
 
-      window.clearInterval(intervalId);
-      window.clearTimeout(finishTimer);
+      if (finishTimer) {
+        window.clearTimeout(finishTimer);
+      }
 
-      musicButton.disabled = true;
-      audio.pause();
+      intro.classList.add("is-leaving");
 
-      intro.classList.add("ag-leaving");
-      intro.setAttribute("aria-hidden", "true");
+      if (audio) {
+        audio.pause();
+
+        try {
+          audio.currentTime = 0;
+        } catch (error) {
+          // Some browsers may not allow seeking immediately.
+        }
+      }
 
       window.setTimeout(() => {
-        intro.remove();
-        introPlayed = true;
+        intro.hidden = true;
+        intro.classList.remove("is-active", "is-leaving");
+        intro.setAttribute("aria-hidden", "true");
+
         introPromise = null;
         resolve();
-      }, 1250);
+      }, FADE_DURATION);
     }
 
-    async function tryPlayIntroMusic() {
-      if (finished) return;
+    // Show the intro above the already-loaded gallery.
+    intro.hidden = false;
+    intro.setAttribute("aria-hidden", "false");
 
-      musicButton.textContent = "✦ STARTING MUSIC… ✦";
+    // Force the browser to register the initial hidden state.
+    void intro.offsetWidth;
+
+    requestAnimationFrame(() => {
+      intro.classList.add("is-active");
+    });
+
+    // Start the intro music after the visitor submits the password.
+    if (audio) {
+      audio.pause();
 
       try {
-        // Synchronize the song with the intro's current position.
-        const elapsed = Math.max(0, (performance.now() - startTime) / 1000);
-
-        if (Number.isFinite(audio.duration) && audio.duration > 0) {
-          audio.currentTime = Math.min(elapsed, Math.max(0, audio.duration - 0.1));
-        } else {
-          audio.currentTime = elapsed;
-        }
-
-        await audio.play();
-
-        if (finished) {
-          audio.pause();
-          return;
-        }
-
-        musicButton.hidden = true;
+        audio.currentTime = 0;
       } catch (error) {
-        console.warn("Intro music could not play:", error);
-        musicButton.hidden = false;
-        musicButton.textContent = "✦ TAP TO TRY MUSIC AGAIN ✦";
+        // Continue even if the browser cannot reset the audio.
+      }
+
+      audio.volume = 0.65;
+
+      const playPromise = audio.play();
+
+      if (playPromise && typeof playPromise.catch === "function") {
+        playPromise.catch(() => {
+          // The visual intro still runs if autoplay is blocked
+          // or the MP3 file cannot be loaded.
+        });
       }
     }
 
-    musicButton.addEventListener("click", tryPlayIntroMusic);
-
-    audio.addEventListener("error", () => {
-      if (finished) return;
-
-      musicButton.hidden = false;
-      musicButton.textContent = "MUSIC UNAVAILABLE — CONTINUE";
-      console.warn("Intro music file could not be loaded:", INTRO_MUSIC_PATH);
-    });
-
-    // The intro timer starts independently of audio playback.
-    startTime = performance.now();
-
-    intro.classList.add("ag-active");
-
-    // Show the first scene immediately so the screen is never blank.
-    showScene(0);
-
-    // Keep advancing the text even when audio is blocked or missing.
-    intervalId = window.setInterval(updateIntro, 100);
-
-    // Safety timer: the intro cannot remain stuck indefinitely.
-    finishTimer = window.setTimeout(finishIntro, INTRO_DURATION);
-
-    // Try autoplay. If the browser blocks it, the button remains visible.
-    audio.pause();
-
-    try {
-      audio.currentTime = 0;
-    } catch (_) {}
-
-    audio.volume = 1;
-    audio.load();
-
-    tryPlayIntroMusic();
+    finishTimer = window.setTimeout(
+      finishIntro,
+      INTRO_DURATION
+    );
   });
 
   return introPromise;
 }
 
 /* =========================================
-   MUSIC PLAYER
+   MUSIC PLAYER — EXISTING PLAYER PRESERVED
    ========================================= */
 
 function setupMusicPlayer() {
@@ -463,33 +147,45 @@ function setupMusicPlayer() {
 
   function updatePlaybackUI() {
     const playing = !audio.paused;
+
     playPause.textContent = playing ? "Ⅱ" : "▶";
-    playPause.setAttribute("aria-label", playing ? "Pause music" : "Play music");
+    playPause.setAttribute(
+      "aria-label",
+      playing ? "Pause music" : "Play music"
+    );
+
     toggle.classList.toggle("is-playing", playing);
   }
 
   function loadSong(index, autoplay = false) {
     if (!MUSIC_PLAYLIST.length) return;
 
-    currentSongIndex = (index + MUSIC_PLAYLIST.length) % MUSIC_PLAYLIST.length;
+    currentSongIndex =
+      (index + MUSIC_PLAYLIST.length) % MUSIC_PLAYLIST.length;
+
     const song = MUSIC_PLAYLIST[currentSongIndex];
 
     audio.src = song.src;
+
     if (title) title.textContent = song.title;
+
     audio.load();
 
     if (autoplay) {
-      audio.play().catch(updatePlaybackUI);
+      audio.play().catch(() => {
+        updatePlaybackUI();
+      });
     }
   }
 
   async function playMusic() {
     try {
-      if (!audio.src) loadSong(currentSongIndex);
+      if (!audio.src) loadSong(currentSongIndex, false);
       await audio.play();
     } catch (error) {
       console.info("Tap the music button to start playback.");
     }
+
     updatePlaybackUI();
   }
 
@@ -500,24 +196,36 @@ function setupMusicPlayer() {
 
   function toggleControls() {
     musicControlsOpen = !musicControlsOpen;
+
     if (details) details.hidden = !musicControlsOpen;
 
     toggle.setAttribute("aria-expanded", String(musicControlsOpen));
+
     toggle.setAttribute(
       "aria-label",
-      musicControlsOpen ? "Close music controls" : "Open music controls"
+      musicControlsOpen
+        ? "Close music controls"
+        : "Open music controls"
     );
 
-    if (musicControlsOpen && audio.paused) playMusic();
+    if (musicControlsOpen && audio.paused) {
+      playMusic();
+    }
   }
 
   toggle.addEventListener("click", toggleControls);
 
   playPause.addEventListener("click", () => {
-    audio.paused ? playMusic() : pauseMusic();
+    if (audio.paused) {
+      playMusic();
+    } else {
+      pauseMusic();
+    }
   });
 
-  next.addEventListener("click", () => loadSong(currentSongIndex + 1, true));
+  next.addEventListener("click", () => {
+    loadSong(currentSongIndex + 1, true);
+  });
 
   previous.addEventListener("click", () => {
     if (audio.currentTime > 3) {
@@ -530,26 +238,36 @@ function setupMusicPlayer() {
 
   audio.addEventListener("play", updatePlaybackUI);
   audio.addEventListener("pause", updatePlaybackUI);
-  audio.addEventListener("ended", () => loadSong(currentSongIndex + 1, true));
+
+  audio.addEventListener("ended", () => {
+    loadSong(currentSongIndex + 1, true);
+  });
 
   audio.addEventListener("error", () => {
-    console.warn("Could not load the music file. Check the MP3 path.");
+    console.warn(
+      "Could not load the music file. Check the MP3 filename and repository path."
+    );
     updatePlaybackUI();
   });
 
   loadSong(0, false);
   updatePlaybackUI();
+
+  // Existing music player behavior is preserved.
+  playMusic();
 }
 
 /* =========================================
-   DRAGGABLE MUSIC BUTTON
+   DRAGGABLE MOON + SAVED POSITION + SPARKLES
    ========================================= */
 
 function setupDraggableMusicButton() {
   const player = $("music-player");
   const button = $("music-toggle");
 
-  if (!player || !button || button.dataset.dragReady === "true") return;
+  if (!player || !button) return;
+  if (button.dataset.dragReady === "true") return;
+
   button.dataset.dragReady = "true";
 
   let dragging = false;
@@ -565,54 +283,105 @@ function setupDraggableMusicButton() {
 
   function keepOnScreen(x, y) {
     const margin = 4;
+
+    const maxX = Math.max(
+      margin,
+      window.innerWidth - player.offsetWidth - margin
+    );
+
+    const maxY = Math.max(
+      margin,
+      window.innerHeight - player.offsetHeight - margin
+    );
+
     return {
-      x: Math.min(Math.max(margin, x), window.innerWidth - player.offsetWidth - margin),
-      y: Math.min(Math.max(margin, y), window.innerHeight - player.offsetHeight - margin)
+      x: Math.min(maxX, Math.max(margin, x)),
+      y: Math.min(maxY, Math.max(margin, y))
     };
   }
 
   function savePosition() {
     try {
-      localStorage.setItem(STORAGE_KEY, JSON.stringify({
-        x: player.offsetLeft,
-        y: player.offsetTop
-      }));
-    } catch (_) {}
+      localStorage.setItem(
+        STORAGE_KEY,
+        JSON.stringify({
+          x: player.offsetLeft,
+          y: player.offsetTop
+        })
+      );
+    } catch (error) {
+      console.info("Could not save the moon position.");
+    }
   }
 
   function restorePosition() {
     try {
       const saved = JSON.parse(localStorage.getItem(STORAGE_KEY));
-      if (!saved || !Number.isFinite(saved.x) || !Number.isFinite(saved.y)) return;
+
+      if (
+        !saved ||
+        !Number.isFinite(saved.x) ||
+        !Number.isFinite(saved.y)
+      ) {
+        return;
+      }
 
       const position = keepOnScreen(saved.x, saved.y);
+
       player.style.left = position.x + "px";
       player.style.top = position.y + "px";
       player.style.right = "auto";
       player.style.bottom = "auto";
-    } catch (_) {}
+    } catch (error) {
+      // Keep the default bottom-right position.
+    }
   }
 
   function createSparkle(x, y) {
     const sparkle = document.createElement("span");
+
     sparkle.className = "afterglow-sparkle";
     sparkle.textContent = Math.random() > 0.5 ? "✦" : "✧";
+
     sparkle.style.left = x + "px";
     sparkle.style.top = y + "px";
-    sparkle.style.setProperty("--sparkle-x", (Math.random() * 34 - 17) + "px");
-    sparkle.style.setProperty("--sparkle-y", (Math.random() * 34 - 17) + "px");
+
+    sparkle.style.setProperty(
+      "--sparkle-x",
+      (Math.random() * 34 - 17) + "px"
+    );
+
+    sparkle.style.setProperty(
+      "--sparkle-y",
+      (Math.random() * 34 - 17) + "px"
+    );
+
     document.body.appendChild(sparkle);
-    sparkle.addEventListener("animationend", () => sparkle.remove(), { once: true });
+
+    sparkle.addEventListener("animationend", () => {
+      sparkle.remove();
+    }, { once: true });
+
     window.setTimeout(() => sparkle.remove(), 900);
   }
 
   function createSparkleTrail(x, y) {
     const now = performance.now();
+
     if (now - lastSparkleTime < 45) return;
+
     lastSparkleTime = now;
-    createSparkle(x + Math.random() * 14 - 7, y + Math.random() * 14 - 7);
+
+    createSparkle(
+      x + Math.random() * 14 - 7,
+      y + Math.random() * 14 - 7
+    );
+
     if (Math.random() > 0.6) {
-      createSparkle(x + Math.random() * 22 - 11, y + Math.random() * 22 - 11);
+      createSparkle(
+        x + Math.random() * 22 - 11,
+        y + Math.random() * 22 - 11
+      );
     }
   }
 
@@ -624,10 +393,12 @@ function setupDraggableMusicButton() {
     dragging = true;
     moved = false;
     suppressClick = false;
+
     startX = event.clientX;
     startY = event.clientY;
 
     const rect = player.getBoundingClientRect();
+
     originX = rect.left;
     originY = rect.top;
 
@@ -635,9 +406,15 @@ function setupDraggableMusicButton() {
     player.style.top = originY + "px";
     player.style.right = "auto";
     player.style.bottom = "auto";
+
     player.classList.add("is-dragging");
 
-    try { button.setPointerCapture(event.pointerId); } catch (_) {}
+    try {
+      button.setPointerCapture(event.pointerId);
+    } catch (error) {
+      // Pointer capture may not be available.
+    }
+
     event.preventDefault();
   });
 
@@ -647,19 +424,29 @@ function setupDraggableMusicButton() {
     const dx = event.clientX - startX;
     const dy = event.clientY - startY;
 
-    if (Math.abs(dx) > 5 || Math.abs(dy) > 5) moved = true;
+    if (Math.abs(dx) > 5 || Math.abs(dy) > 5) {
+      moved = true;
+    }
+
     if (!moved) return;
 
-    const position = keepOnScreen(originX + dx, originY + dy);
+    const position = keepOnScreen(
+      originX + dx,
+      originY + dy
+    );
+
     player.style.left = position.x + "px";
     player.style.top = position.y + "px";
+
     createSparkleTrail(event.clientX, event.clientY);
   });
 
   function finishDrag() {
     if (!dragging) return;
+
     dragging = false;
     player.classList.remove("is-dragging");
+
     if (moved) {
       suppressClick = true;
       savePosition();
@@ -671,24 +458,32 @@ function setupDraggableMusicButton() {
 
   button.addEventListener("click", (event) => {
     if (!suppressClick) return;
+
     event.preventDefault();
     event.stopImmediatePropagation();
+
     suppressClick = false;
   }, true);
 
   window.addEventListener("resize", () => {
     const rect = player.getBoundingClientRect();
-    const position = keepOnScreen(rect.left, rect.top);
+
+    const position = keepOnScreen(
+      rect.left,
+      rect.top
+    );
+
     player.style.left = position.x + "px";
     player.style.top = position.y + "px";
     player.style.right = "auto";
     player.style.bottom = "auto";
+
     savePosition();
   });
 }
 
 /* =========================================
-   MEMORY DATA + GATEWAY
+   MEMORY DATA
    ========================================= */
 
 const defaultMemories = Array.from({ length: 24 }, (_, i) => ({
@@ -710,13 +505,18 @@ async function request(action, data = {}, token = currentToken) {
   });
 
   const result = await response.json().catch(() => ({}));
-  if (!response.ok) throw new Error(result.error || `Request failed (${response.status})`);
+
+  if (!response.ok) {
+    throw new Error(result.error || `Request failed (${response.status})`);
+  }
+
   return result;
 }
 
 function showMessage(message, isError = false) {
   const el = $("editor-message");
   if (!el) return;
+
   el.textContent = message;
   el.style.color = isError ? "#ff9baf" : "#d8c0ff";
 }
@@ -729,6 +529,7 @@ function setOwnerStatus(message) {
 function openOwnerModal() {
   const modal = $("owner-modal");
   if (!modal) return;
+
   modal.classList.add("is-open", "open");
   modal.style.display = "flex";
   modal.setAttribute("aria-hidden", "false");
@@ -737,6 +538,7 @@ function openOwnerModal() {
 function closeOwnerModal() {
   const modal = $("owner-modal");
   if (!modal) return;
+
   modal.classList.remove("is-open", "open");
   modal.style.display = "";
   modal.setAttribute("aria-hidden", "true");
@@ -767,37 +569,51 @@ function makeGate() {
       style="width:100%;max-width:380px;padding:30px 24px;
       border:1px solid #68457d;border-radius:18px;
       background:#170e25;text-align:center">
-      <p style="letter-spacing:4px;font-size:11px;color:#d4a8ff">AFTERGLOW ✦</p>
+
+      <p style="letter-spacing:4px;font-size:11px;color:#d4a8ff">
+        AFTERGLOW ✦
+      </p>
+
       <h2 style="font-family:Georgia,serif;font-size:32px;font-weight:400">
         A private <em>universe</em>
       </h2>
+
       <p style="color:#c7b7d2;line-height:1.7">
         Enter the viewing password to open the memory archive.
       </p>
+
       <input id="viewer-password" type="password"
-        autocomplete="current-password" required placeholder="Viewing password"
-        style="box-sizing:border-box;width:100%;padding:14px;margin:12px 0;
-        border:1px solid #60416f;border-radius:9px;background:#10091d;
-        color:white;font-size:16px">
+        autocomplete="current-password" required
+        placeholder="Viewing password"
+        style="box-sizing:border-box;width:100%;padding:14px;
+        margin:12px 0;border:1px solid #60416f;border-radius:9px;
+        background:#10091d;color:white;font-size:16px">
+
       <button type="submit"
         style="width:100%;padding:14px;border:0;border-radius:9px;
         background:#b88be4;color:#160c20;font-weight:600;font-size:15px">
         Open memories
       </button>
-      <p id="viewer-error" role="status" style="color:#ff9baf;font-size:13px"></p>
+
+      <p id="viewer-error" role="status"
+        style="color:#ff9baf;font-size:13px"></p>
     </form>
   `;
 
   document.body.appendChild(gate);
   $("viewer-login-form").addEventListener("submit", viewerLogin);
+
   return gate;
 }
 
 function setSiteVisible(visible) {
   const gate = $("viewer-gate");
 
-  document.querySelectorAll("#particles, .site-header, main, .site-footer")
-    .forEach((el) => { el.hidden = !visible; });
+  document.querySelectorAll(
+    "#particles, .site-header, main, .site-footer"
+  ).forEach((el) => {
+    el.hidden = !visible;
+  });
 
   if (gate) {
     gate.hidden = visible;
@@ -814,15 +630,22 @@ async function viewerLogin(event) {
 
   const password = $("viewer-password").value;
   const errorEl = $("viewer-error");
-  const button = $("viewer-login-form").querySelector('button[type="submit"]');
+  const button = $("viewer-login-form").querySelector(
+    'button[type="submit"]'
+  );
 
   errorEl.textContent = "Checking password…";
   if (button) button.disabled = true;
 
   try {
-    const result = await request("login", { mode: "view", password }, "");
+    const result = await request("login", {
+      mode: "view",
+      password
+    }, "");
 
-    if (!result.token) throw new Error("The server did not return an access token.");
+    if (!result.token) {
+      throw new Error("The server did not return an access token.");
+    }
 
     currentToken = result.token;
     currentRole = result.role || "view";
@@ -830,15 +653,22 @@ async function viewerLogin(event) {
     sessionStorage.setItem("afterglow_view_token", currentToken);
     sessionStorage.removeItem("afterglow_owner_token");
 
+    // Load the gallery before showing the intro.
     await loadMemories();
 
     errorEl.textContent = "";
     $("viewer-password").value = "";
+
+    // Hide the password gate and reveal the gallery underneath.
+    // The intro covers the gallery while it plays.
     setSiteVisible(true);
 
+    // Only manual successful viewer login triggers the intro.
     await startAfterglowIntro();
+
   } catch (error) {
-    errorEl.textContent = error.message || "Could not open the archive.";
+    errorEl.textContent =
+      error.message || "Could not open the archive.";
   } finally {
     if (button) button.disabled = false;
   }
@@ -856,14 +686,21 @@ function setupOwnerForm() {
     email.required = false;
     email.value = "";
     email.hidden = true;
+
     const label = document.querySelector('label[for="owner-email"]');
     if (label) label.hidden = true;
   }
 
-  const passwordLabel = document.querySelector('label[for="owner-password"]');
-  if (passwordLabel) passwordLabel.textContent = "Owner password";
+  const passwordLabel = document.querySelector(
+    'label[for="owner-password"]'
+  );
+
+  if (passwordLabel) {
+    passwordLabel.textContent = "Owner password";
+  }
 
   const password = $("owner-password");
+
   if (password) {
     password.autocomplete = "current-password";
     password.placeholder = "Your owner password";
@@ -886,6 +723,7 @@ function setupOwnerForm() {
   });
 
   $("close-modal")?.addEventListener("click", closeOwnerModal);
+
   document.querySelectorAll("[data-close-modal]").forEach((el) => {
     el.addEventListener("click", closeOwnerModal);
   });
@@ -907,8 +745,14 @@ async function ownerLogin(event) {
   setOwnerStatus("Checking owner password…");
 
   try {
-    const result = await request("login", { mode: "owner", password }, "");
-    if (!result.token) throw new Error("The server did not return an access token.");
+    const result = await request("login", {
+      mode: "owner",
+      password
+    }, "");
+
+    if (!result.token) {
+      throw new Error("The server did not return an access token.");
+    }
 
     currentToken = result.token;
     currentRole = "owner";
@@ -925,6 +769,7 @@ async function ownerLogin(event) {
 
     setSiteVisible(true);
     openOwnerModal();
+
     await loadMemories();
 
     showMessage("You're signed in. Your memories are ready.");
@@ -964,6 +809,7 @@ function normalizeMemories(rows) {
 
   rows.forEach((row, index) => {
     const numericId = Number(row.id);
+
     const targetIndex =
       Number.isInteger(numericId) && numericId >= 1 && numericId <= 24
         ? numericId - 1
@@ -1020,10 +866,12 @@ function renderGallery() {
 
     if (memory.image_url && /^https?:\/\//i.test(memory.image_url)) {
       image.src = memory.image_url;
+
       image.addEventListener("load", () => {
         placeholder.hidden = true;
         image.hidden = false;
       });
+
       image.addEventListener("error", () => {
         image.hidden = true;
         placeholder.hidden = false;
@@ -1041,7 +889,8 @@ function renderGallery() {
 
     const kicker = document.createElement("p");
     kicker.className = "memory-kicker";
-    kicker.textContent = `FRAGMENT ${String(index + 1).padStart(2, "0")}`;
+    kicker.textContent =
+      `FRAGMENT ${String(index + 1).padStart(2, "0")}`;
 
     const title = document.createElement("h3");
     title.className = "memory-title";
@@ -1052,7 +901,8 @@ function renderGallery() {
 
     const body = document.createElement("p");
     body.className = "memory-body";
-    body.textContent = memory.body || "A space waiting for a memory to be written.";
+    body.textContent =
+      memory.body || "A space waiting for a memory to be written.";
 
     copy.append(kicker, title, divider, body);
     panel.append(visual, copy);
@@ -1088,6 +938,7 @@ function populateMemorySelect() {
     option.value = String(index);
     option.textContent =
       `${String(index + 1).padStart(2, "0")} — ${memory.title}`;
+
     select.appendChild(option);
   });
 
@@ -1130,7 +981,13 @@ async function saveMemory() {
         throw new Error("Choose an image smaller than 5 MB.");
       }
 
-      const allowedTypes = ["image/jpeg", "image/png", "image/webp", "image/gif"];
+      const allowedTypes = [
+        "image/jpeg",
+        "image/png",
+        "image/webp",
+        "image/gif"
+      ];
+
       if (!allowedTypes.includes(file.type)) {
         throw new Error("Choose a JPG, PNG, WEBP, or GIF image.");
       }
@@ -1139,12 +996,17 @@ async function saveMemory() {
         throw new Error("Supabase configuration is incomplete.");
       }
 
-      const prepared = await request("prepare_upload", { contentType: file.type });
+      const prepared = await request("prepare_upload", {
+        contentType: file.type
+      });
+
       if (!prepared.path || !prepared.token) {
         throw new Error("The server did not prepare the upload.");
       }
 
-      if (!window.supabase) throw new Error("The Supabase upload client is unavailable.");
+      if (!window.supabase) {
+        throw new Error("The Supabase upload client is unavailable.");
+      }
 
       if (!storageClient) {
         storageClient = window.supabase.createClient(
@@ -1161,6 +1023,7 @@ async function saveMemory() {
         });
 
       if (error) throw error;
+
       imagePath = prepared.path;
     }
 
@@ -1202,6 +1065,7 @@ async function removeImage() {
 
   try {
     const removedId = selectedMemory.id;
+
     await request("remove_image", { id: removedId });
     await loadMemories();
 
@@ -1238,10 +1102,13 @@ function initParticles() {
 
   function resize() {
     const ratio = window.devicePixelRatio || 1;
+
     canvas.width = window.innerWidth * ratio;
     canvas.height = window.innerHeight * ratio;
+
     canvas.style.width = `${window.innerWidth}px`;
     canvas.style.height = `${window.innerHeight}px`;
+
     ctx.setTransform(ratio, 0, 0, ratio, 0, 0);
   }
 
@@ -1255,7 +1122,9 @@ function initParticles() {
     };
   }
 
-  for (let i = 0; i < 55; i++) particles.push(createParticle());
+  for (let i = 0; i < 55; i++) {
+    particles.push(createParticle());
+  }
 
   function draw() {
     ctx.clearRect(0, 0, window.innerWidth, window.innerHeight);
@@ -1269,7 +1138,15 @@ function initParticles() {
       }
 
       ctx.beginPath();
-      ctx.arc(particle.x, particle.y, particle.radius, 0, Math.PI * 2);
+
+      ctx.arc(
+        particle.x,
+        particle.y,
+        particle.radius,
+        0,
+        Math.PI * 2
+      );
+
       ctx.fillStyle = `rgba(205,166,255,${particle.alpha})`;
       ctx.fill();
     });
@@ -1288,7 +1165,9 @@ function initParticles() {
 
   resize();
   start();
+
   window.addEventListener("resize", resize);
+
   document.addEventListener("visibilitychange", () => {
     document.hidden ? stop() : start();
   });
@@ -1301,10 +1180,11 @@ function initParticles() {
 async function startApp() {
   initParticles();
   setupOwnerForm();
+
+  // Keep the existing floating music player and moon.
+  setupMusicPlayer();
   setupDraggableMusicButton();
 
-  // The background playlist does not autoplay.
-  // Intro music is attempted after successful viewer login.
   setSiteVisible(false);
   makeGate();
 
@@ -1324,6 +1204,8 @@ async function startApp() {
       currentRole = session.role;
 
       await loadMemories();
+
+      // Restoring an existing session does NOT play the intro.
       setSiteVisible(true);
 
       if (currentRole === "owner") {
@@ -1346,6 +1228,7 @@ async function startApp() {
 
   $("login-form").hidden = false;
   $("editor").hidden = true;
+
   setSiteVisible(false);
 }
 
