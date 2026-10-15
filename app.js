@@ -445,9 +445,8 @@ function setupMusicPlayer() {
     updatePlaybackUI();
   });
 
-  loadSong(0, false);
-  updatePlaybackUI();
-  playMusic();
+loadSong(0, false);
+updatePlaybackUI();
 }
 
 /* =========================================
