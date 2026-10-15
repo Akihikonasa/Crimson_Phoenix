@@ -1074,9 +1074,8 @@ main,
   opacity: 0;
 }
 
-.is-active .intro-progress span {
-  animation: intro-progress-fill 38s linear forwards;
-}
+.is-active .intro-orbit {
+  animation: intro-orbit-appear 1.8s cubic-bezier(0.16, 1, 0.3, 1) forwards;
 }
 
 .intro-orbit-one {
